@@ -379,7 +379,7 @@ namespace FinanzasAPI.Features.Repositories
                 usuario = reader["usuario"].ToString(),
                 password = reader["password"].ToString(),
                 activo = Convert.ToBoolean(reader["activo"].ToString()),
-                rolid = Convert.ToInt32(reader["rolid"].ToString())
+                rol = Convert.ToString(reader["rol"].ToString())
 
             };
         }
@@ -420,11 +420,15 @@ namespace FinanzasAPI.Features.Repositories
 
         public async Task<List<MedidasInsertDTOs>> postMedidasCalidad(List<MedidasInsertDTOs> datos)
         {
-            var resp = await getModificarExcel(datos);
-            if(resp == null)
+            if(datos[0]?.version == 0)
             {
-                return null;
+                var resp = await getModificarExcel(datos);
+                if(resp == null)
+                {
+                    return null;
+                }
             }
+
             var response = new List<MedidasInsertDTOs>();
 
             for (int x = 0; x < datos.Count; x++)
@@ -441,6 +445,7 @@ namespace FinanzasAPI.Features.Repositories
                         cmd.Parameters.Add(new SqlParameter("@IdTalla", datos[x].idTalla));
                         cmd.Parameters.Add(new SqlParameter("@medida", datos[x].Medida));
                         cmd.Parameters.Add(new SqlParameter("@medidaNumerador", datos[x].MedidaNumerador.Length > 0 ? datos[x].MedidaNumerador : 0));
+                        cmd.Parameters.Add(new SqlParameter("@moduloId", datos[x].moduloId));
 
 
                         await sql.OpenAsync();
@@ -466,7 +471,10 @@ namespace FinanzasAPI.Features.Repositories
         {
             return new MedidasInsertDTOs()
             {
-                id = Convert.ToInt32(reader["ID"].ToString())
+                id = Convert.ToInt32(reader["ID"].ToString()),
+                version = Convert.ToInt32(reader["version"].ToString()),
+
+
             };
         }
 
@@ -623,7 +631,14 @@ namespace FinanzasAPI.Features.Repositories
                         }
                     }
 
-                    try
+                    if(response.Count > 0)
+                        datos.version = response[0].version > 0 ? response[0].version : 0 ;
+                        else
+                        {
+                            datos.version = 0;
+
+                        }
+                        try
                     {
                         datos.tolerancia1 = Convert.ToString(Math.Round((double)(worksheet.Cells[fila, tolerancia] as Microsoft.Office.Interop.Excel.Range).Value,4));
 
@@ -773,6 +788,120 @@ namespace FinanzasAPI.Features.Repositories
 
                 medida = Convert.ToDouble(reader["medida"].ToString()),
                 medidaNumerador = Convert.ToDouble(reader["medidaNumerador"].ToString()),
+                version = Convert.ToInt32(reader["version"].ToString())
+            };
+        }
+
+        public async Task<List<ComentarioDTO>> postComentario(List<ComentarioDTO> comentario)
+        {
+            var response = new List<ComentarioDTO>();
+
+            for (int i = 0; i < comentario.Count; i++)
+            {
+                using (SqlConnection sql = new SqlConnection(_connectionStringCubo))
+                {
+                    using (SqlCommand cmd = new SqlCommand("[IM_InsertarComentario]", sql))
+                    {
+                        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                        cmd.Parameters.Add(new SqlParameter("@masterID", comentario[i].MasterID));
+                        cmd.Parameters.Add(new SqlParameter("@usuario", comentario[i].usuario));
+                        cmd.Parameters.Add(new SqlParameter("@comentario", comentario[i].comentario));
+
+                        await sql.OpenAsync();
+
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                response.Add(getListaComentarioInsert(reader));
+                            }
+                        }
+
+                    }
+
+                }
+
+            }
+            return response;
+        }
+        public ComentarioDTO getListaComentarioInsert(SqlDataReader reader)
+        {
+            return new ComentarioDTO()
+            {
+                MasterID = Convert.ToInt32(reader["MasterID"].ToString()),
+            };
+        }
+
+        public async Task<List<ComentariosDTO>> getComentarios(int masterId)
+        {
+            var response = new List<ComentariosDTO>();
+            using (SqlConnection sql = new SqlConnection(_connectionStringCubo))
+            {
+                using (SqlCommand cmd = new SqlCommand("[IM_ObtenerComentarioOrden]", sql))
+                {
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(new SqlParameter("@masterID", masterId));
+
+                    await sql.OpenAsync();
+
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            response.Add(getListaComentarios(reader));
+                        }
+                    }
+
+                }
+
+            }
+            return response;
+        }
+
+        public ComentariosDTO getListaComentarios(SqlDataReader reader)
+        {
+            return new ComentariosDTO()
+            {
+                MasterID = Convert.ToInt32(reader["MasterID"].ToString()),
+                usuario = Convert.ToString(reader["nombre"].ToString()),
+                comentario = Convert.ToString(reader["comentario"].ToString()),
+                fecha = Convert.ToDateTime(reader["fecha"].ToString()),
+            };
+        }
+
+        public async Task<List<ModulosCalidadDTO>> GetModulosCalidad()
+        {
+            var response = new List<ModulosCalidadDTO>();
+            using (SqlConnection sql = new SqlConnection(_connectionStringCubo))
+            {
+                using (SqlCommand cmd = new SqlCommand("[IM_ObtenerModulosCalidad]", sql))
+                {
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    
+
+                    await sql.OpenAsync();
+
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            response.Add(getListaModulos(reader));
+                        }
+                    }
+
+                }
+
+            }
+            return response;
+        }
+        public ModulosCalidadDTO getListaModulos(SqlDataReader reader)
+        {
+            return new ModulosCalidadDTO()
+            {
+                ID = Convert.ToInt32(reader["ID"].ToString()),
+                Modulo = Convert.ToString(reader["Modulo"].ToString()),
+                Activo = Convert.ToBoolean(reader["Activo"].ToString())
+                
             };
         }
     }

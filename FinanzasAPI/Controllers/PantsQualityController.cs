@@ -71,6 +71,29 @@ namespace FinanzasAPI.Controllers
             return resp;
         }
 
+        [HttpPost("comentarioInsert")]
+        public async Task<ActionResult<IEnumerable<ComentarioDTO>>> postComentario(List<ComentarioDTO> comentarios)
+        {
+            var resp = await _pantsQuality.postComentario(comentarios);
+            return resp;
+        }
+
+        [HttpGet("comentarios/{masterId}")]
+        public async Task<ActionResult<IEnumerable<ComentariosDTO>>> getComentarios(int masterId)
+        {
+            var resp = await _pantsQuality.getComentarios(masterId);
+            return Ok(resp);
+        }
+
+        [HttpGet("modulosCalidad")]
+        public async Task<ActionResult<IEnumerable<ModulosCalidadDTO>>> getModulosCalidad()
+        {
+            var resp = await _pantsQuality.GetModulosCalidad();
+            return resp;
+
+        }
+
+
 
     }
 }

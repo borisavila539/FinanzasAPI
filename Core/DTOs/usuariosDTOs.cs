@@ -7,7 +7,7 @@ namespace Core.DTOs
         public int id { get; set; }
         public string usuario { get; set; }
         public string password { get; set; }
-        public int rolid { get; set; }
+        public string rol { get; set; }
         public Boolean activo { get; set; }
         
     }

@@ -11,6 +11,8 @@
 		public string MedidaNumerador { get; set; }
 		public string Diferencia { get; set;}
 		public int usuarioID { get; set; }
+		public int moduloId { get; set; }
+		public int? version { get; set; }
 
 	}
 }

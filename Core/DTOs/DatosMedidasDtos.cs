@@ -21,6 +21,7 @@ namespace Core.DTOs
         public string referencia { get; set; }
         public string tolerancia1 { get; set;}
         public string tolerancia2 { get; set; }
+        public int version { get; set; }
 
     }
 }

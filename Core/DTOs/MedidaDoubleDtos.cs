@@ -11,5 +11,6 @@ namespace Core.DTOs
         public int id { get; set; }
         public double medida { get; set; }
         public double medidaNumerador { get; set; }
+        public int version { get; set; }
     }
 }
