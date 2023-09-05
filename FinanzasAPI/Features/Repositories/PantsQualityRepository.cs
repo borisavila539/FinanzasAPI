@@ -420,14 +420,14 @@ namespace FinanzasAPI.Features.Repositories
 
         public async Task<List<MedidasInsertDTOs>> postMedidasCalidad(List<MedidasInsertDTOs> datos)
         {
-            if(datos[0]?.version == 0)
+            /*if(datos[0]?.version == 0)
             {
                 var resp = await getModificarExcel(datos);
                 if(resp == null)
                 {
                     return null;
                 }
-            }
+            }*/
 
             var response = new List<MedidasInsertDTOs>();
 
