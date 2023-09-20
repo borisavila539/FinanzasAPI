@@ -41,6 +41,8 @@ namespace FinanzasAPI
             services.AddTransient<INotificacionPagoProveedorRepository, NotificacionPagoRepository>();
             services.AddTransient<IPantsQualityRepository, PantsQualityRepository>();
             services.AddTransient<IAudiTelasRepository, AuditelasRepository>();
+            services.AddTransient<IAX, AXRepository>();
+
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "FinanzasAPI", Version = "v1" });

@@ -5,6 +5,26 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="DTOs\ActualizarRollosDTO.cs" />
+    <Compile Remove="DTOs\DatosRollosInsertDTOs.cs" />
+    <Compile Remove="DTOs\DEFECTOSLINE.cs" />
+    <Compile Remove="DTOs\InsertarAnchoYardasDTO.cs" />
+    <Compile Remove="DTOs\ObtenerDatosDefectosDTO.cs" />
+    <Compile Remove="DTOs\ObtenerDetalleRolloDTO.cs" />
+    <Compile Remove="Interfaces\IAX.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="DTOs\ActualizarRollosDTO.cs" />
+    <None Include="DTOs\DatosRollosInsertDTOs.cs" />
+    <None Include="DTOs\DEFECTOSLINE.cs" />
+    <None Include="DTOs\InsertarAnchoYardasDTO.cs" />
+    <None Include="DTOs\ObtenerDatosDefectosDTO.cs" />
+    <None Include="DTOs\ObtenerDetalleRolloDTO.cs" />
+    <None Include="Interfaces\IAX.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ReportingServices\ReportingServices.csproj" />
   </ItemGroup>
 

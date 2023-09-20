@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Features\Repositories\AXRepository.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <COMReference Include="Microsoft.Office.Interop.Excel">
       <WrapperTool>tlbimp</WrapperTool>
       <VersionMinor>9</VersionMinor>
@@ -44,6 +48,10 @@
 
   <ItemGroup>
     <Folder Include="Reporting\images\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Features\Repositories\AXRepository.cs" />
   </ItemGroup>
 
   <ItemGroup>
