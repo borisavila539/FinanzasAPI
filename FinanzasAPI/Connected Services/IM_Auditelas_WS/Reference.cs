@@ -587,7 +587,7 @@ namespace IM_Auditelas_WS
         {
             if ((endpointConfiguration == EndpointConfiguration.NetTcpBinding_IM_AudiTelas))
             {
-                return new System.ServiceModel.EndpointAddress("net.tcp://gim-dev-aos:8201/DynamicsAx/Services/IM_AudiTelasGP");
+                return new System.ServiceModel.EndpointAddress("net.tcp://gim-pro3-AOS:8201/DynamicsAx/Services/IM_AudiTelasGP");
             }
             throw new System.InvalidOperationException(string.Format("Could not find endpoint with name \'{0}\'.", endpointConfiguration));
         }
