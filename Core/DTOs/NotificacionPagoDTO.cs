@@ -8,6 +8,7 @@ namespace Core.DTOs
 {
     public class NotificacionPagoDTO
     {
+        public DateTime fecha { get; set; }
         public string? correo { get; set; }
         public string proveedorNum { get; set; }
         public string NombreProveedor { get; set; }

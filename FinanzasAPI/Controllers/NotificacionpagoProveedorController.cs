@@ -16,10 +16,10 @@ namespace FinanzasAPI.Controllers
             _notificacionPagoProveedorRepository = notificacionPagoProveedorRepository;
         }
 
-        [HttpGet("{numerolote}/{enviar}/{empresa}")]
-        public async Task<ActionResult<IEnumerable<NotificacionPagoDTO>>> GetNotificacionpagoProveedores(string numerolote, int enviar, string empresa)
+        [HttpGet("{numerolote}/{enviar}/{empresa}/{correoCopia}")]
+        public async Task<ActionResult<IEnumerable<NotificacionPagoDTO>>> GetNotificacionpagoProveedores(string numerolote, int enviar, string empresa, string correoCopia)
         {
-            var resp = await _notificacionPagoProveedorRepository.getNotificacionPago(numerolote, enviar,empresa);
+            var resp = await _notificacionPagoProveedorRepository.getNotificacionPago(numerolote, enviar,empresa,correoCopia);
             return Ok(resp);
         }
     }

@@ -26,9 +26,10 @@ namespace FinanzasAPI.Features.Repositories
             _context = context;
             _connectionString = configuracion.GetConnectionString("MicrosoftDynamicsAX_PRO");
         }
-        public async Task<List<NotificacionPagoDTO>> getNotificacionPago(string numerolote, int enviar, string empresa)
+        public async Task<List<NotificacionPagoDTO>> getNotificacionPago(string numerolote, int enviar, string empresa, string correoCopia)
         {
-
+            if (correoCopia == "-")
+                correoCopia = "";
             using (SqlConnection sql = new SqlConnection(_connectionString))
             {
                 using (SqlCommand cmd = new SqlCommand("IMPagoProveedores", sql))
@@ -48,8 +49,11 @@ namespace FinanzasAPI.Features.Repositories
                     }
                     if(enviar == 1)
                     {
-                        await getListaRetencion(numerolote, empresa);
-                        enviarCorreo(response,numerolote,empresa);
+                        if(empresa == "IMHN")
+                        {
+                            await getListaRetencion(numerolote, empresa);
+                        }
+                        enviarCorreo(response,numerolote,empresa,correoCopia);
                     }
   
                     return response;
@@ -61,6 +65,7 @@ namespace FinanzasAPI.Features.Repositories
         {
             return new NotificacionPagoDTO()
             {
+                fecha = Convert.ToDateTime(reader["fecha"].ToString()),
                 correo = reader["correo"].ToString(),
                 proveedorNum = reader["proveedorNum"].ToString(),
                 NombreProveedor = reader["NombreProveedor"].ToString(),
@@ -149,7 +154,7 @@ namespace FinanzasAPI.Features.Repositories
             return nombre;
         }
 
-        public void enviarCorreo(List<NotificacionPagoDTO> datos, string numerolote, string empresa)
+        public void enviarCorreo(List<NotificacionPagoDTO> datos, string numerolote, string empresa, string correoCopia)
         {
             List<ComprobanteRetencionPDF_DTO> comprobantes = new List<ComprobanteRetencionPDF_DTO>();
             ComprobanteRetencionPDF_DTO comprobante = new ComprobanteRetencionPDF_DTO();
@@ -253,10 +258,14 @@ namespace FinanzasAPI.Features.Repositories
 
                 if (data[0].correo != null && data[0].correo != "")
                 {
-                    string correoDestino = data[0].correo;//cambiar a correo destino despues
+                    string correoDestino = data[0].correo ;//cambiar a correo destino despues
                     string correoOrigen = "sistema@intermoda.com.hn";
                     string contrasena = "Intermod@2022#";
                     string asunto = "Notificacion de pago";
+                    if (empresa == "IMGT")
+                    {
+                        correoDestino += (correoCopia.Length > 0 ? "," + correoCopia : "");
+                    }
 
                     //Cuerpo del correo
                     string html = $"<h3>Estimados señores de: {data[0].NombreProveedor}</h3>" +
@@ -264,6 +273,7 @@ namespace FinanzasAPI.Features.Repositories
                                   "<table border = '1'>" +
                                         "<thead>" +
                                             "<tr>" +
+                                                "<th>Fecha de pago</th>" +
                                                 "<th>Banco</th>" +
                                                 "<th>Numero de cuenta</th>" +
                                                 "<th>Numero de Factura</th>" +
@@ -279,6 +289,7 @@ namespace FinanzasAPI.Features.Repositories
                     data.ForEach(x =>
                     {
                         html += "<tr>" +
+                                    $"<td style='padding: 0px 5px;'> {x.fecha.ToString("MM/dd/yyyy")}</td>" +
                                     $"<td style='padding: 0px 5px;'> {x.Nombrebanco}</td>" +
                                     $"<td style='padding: 0px 5px;'>{x.Cuenta}</td>" +
                                     $"<td style='padding: 0px 5px;'>{x.NumeroFactura}</td>" +
@@ -292,11 +303,17 @@ namespace FinanzasAPI.Features.Repositories
                                 "<td></td>" +
                                 "<td></td>" +
                                 "<td></td>" +
+                                "<td></td>" +
                                 "<td style='font-weight: bold;'>Total</td>" +
                                 $"<td style='text-align: right;font-weight: bold;'>{total.ToString("0,0.00", CultureInfo.InvariantCulture)} </td>" +
                             "</tr>" +
                         "</body>" +
                     "</table>";
+
+                    if(empresa == "IMGT")
+                    {
+                        html += "<p>Se le solicita confirme de recibido y el envio del recibo de caja a nuestras oficinas en hora de de atencion a proveedores, martes de 8:00 am a 12:00pm.</p>";
+                    }
 
                     MailMessage mailMessage = new MailMessage(correoOrigen, correoDestino, asunto, html);
                     mailMessage.IsBodyHtml = true;

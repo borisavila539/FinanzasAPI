@@ -6,6 +6,6 @@ namespace Core.Interfaces
 {
     public interface INotificacionPagoProveedorRepository
     {
-        public Task<List<NotificacionPagoDTO>> getNotificacionPago(string numerolote, int enviar, string empresa);
+        public Task<List<NotificacionPagoDTO>> getNotificacionPago(string numerolote, int enviar, string empresa,string correoCopia);
     }
 }
