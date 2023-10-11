@@ -19,12 +19,16 @@ namespace FinanzasAPI.Features.Repositories
     public class NotificacionPagoRepository : INotificacionPagoProveedorRepository
     {
         private readonly string _connectionString;
+        private readonly string _connectionStringCubo;
+
         private readonly AxContext _context;
         private List<ComprobanteRetencionDTO> comprobanteRetencions = new List<ComprobanteRetencionDTO>();
         public NotificacionPagoRepository(AxContext context, IConfiguration configuracion)
         {
             _context = context;
             _connectionString = configuracion.GetConnectionString("MicrosoftDynamicsAX_PRO");
+            _connectionStringCubo = configuracion.GetConnectionString("IMDesarrollos");
+
         }
         public async Task<List<NotificacionPagoDTO>> getNotificacionPago(string numerolote, int enviar, string empresa, string correoCopia)
         {
@@ -222,11 +226,14 @@ namespace FinanzasAPI.Features.Repositories
 
             proveedores.ForEach(tmp =>
             {
+                //validar si el correo ya ha sido enviado
+
                 //campos que llevara la tabla
                 List<NotificacionPagoDTO> data = new List<NotificacionPagoDTO>();
                 List<ComprobanteRetencionPDF_DTO> pdf = new List<ComprobanteRetencionPDF_DTO>();
                 decimal sumaImporte = 0;
                 decimal sumaRetension = 0;
+                //bool enviado = false;
 
                 datos.ForEach(tmp2 =>
                 {
@@ -255,10 +262,11 @@ namespace FinanzasAPI.Features.Repositories
                     pdf.Add(tmp4);
                     tmp4 = new ComprobanteRetencionPDF_DTO();
                 }
-
-                if (data[0].correo != null && data[0].correo != "")
+                Task<string> enviado = CorreoEnviado(empresa, data[0].proveedorNum, numerolote);
+                string FueEnviado = enviado.Result.ToString();
+                if (data[0].correo != null && data[0].correo != "" && FueEnviado  == "NO")
                 {
-                    string correoDestino = data[0].correo ;//cambiar a correo destino despues
+                    string correoDestino = data[0].correo;//cambiar a correo destino despues
                     string correoOrigen = "sistema@intermoda.com.hn";
                     string contrasena = "Intermod@2022#";
                     string asunto = "Notificacion de pago";
@@ -310,7 +318,7 @@ namespace FinanzasAPI.Features.Repositories
                         "</body>" +
                     "</table>";
 
-                    if(empresa == "IMGT")
+                    if (empresa == "IMGT")
                     {
                         html += "<p>Se le solicita confirme de recibido y el envio del recibo de caja a nuestras oficinas en hora de de atencion a proveedores, martes de 8:00 am a 12:00pm.</p>";
                     }
@@ -326,18 +334,18 @@ namespace FinanzasAPI.Features.Repositories
                         mailMessage.Attachments.Add(new Attachment(ms, "Comprobante_Retencion.pdf"));
                         byte[] pdfData = ms.ToArray();
                         DateTime date = DateTime.Now;
-                        string path = @"\\AppServer\Intermoda\RETENCION AX\RETENCIONES "+ date.Year + @"\" + mes(date.Month);
+                        string path = @"\\AppServer\Intermoda\RETENCION AX\RETENCIONES " + date.Year + @"\" + mes(date.Month);
                         try
                         {
-                            
-                            File.WriteAllBytes(path + @"\"+ empresa + "-" + pdf[0].comprobante.Substring(11, 8) + "-"+ pdf[0].proveedorNum + ".pdf", pdfData);
+
+                            File.WriteAllBytes(path + @"\" + empresa + "-" + pdf[0].comprobante.Substring(11, 8) + "-" + pdf[0].proveedorNum + ".pdf", pdfData);
                         }
                         catch (Exception ex)
                         {
                             Directory.CreateDirectory(path);
                             File.WriteAllBytes(path + @"\" + empresa + "-" + pdf[0].comprobante.Substring(11, 8) + "-" + pdf[0].proveedorNum + ".pdf", pdfData);
                         }
-                        
+
                     }
 
                     SmtpClient smtpClient = new SmtpClient();
@@ -352,9 +360,83 @@ namespace FinanzasAPI.Features.Repositories
                     smtpClient.Credentials = networkCredential;
 
                     smtpClient.Send(mailMessage);
-                    smtpClient.Dispose();  
+                    smtpClient.Dispose();
+                    data.ForEach(x =>
+                    {
+                        sendHisttory(empresa, datos[0].proveedorNum, datos[0].correo, numerolote, x.NumeroFactura, x.fecha, true);
+
+                    });
+                }
+                else
+                {
+                    if(FueEnviado == "NO")
+                    {
+                        data.ForEach(x =>
+                        {
+                            sendHisttory(empresa, datos[0].proveedorNum, datos[0].correo, numerolote, x.NumeroFactura, x.fecha, false);
+
+                        });
+                    }
+                    
+
                 }
             });
         }
+        public  async void sendHisttory(string empresa,string CodigoProveedor, string CorreoProveedor, string numeroLote,string factura, DateTime fecha, bool enviado)
+        {
+            using (SqlConnection sql = new SqlConnection(_connectionStringCubo))
+            {
+                using (SqlCommand cmd = new SqlCommand("[IM_InsertNotificacionPago_HN_GT]", sql))
+                {
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(new SqlParameter("@Empresa", empresa));
+                    cmd.Parameters.Add(new SqlParameter("@Codigo_Proveedor", CodigoProveedor));
+                    cmd.Parameters.Add(new SqlParameter("@Correo_Proveedor", CorreoProveedor));
+                    cmd.Parameters.Add(new SqlParameter("@Numero_Lote", numeroLote));
+                    cmd.Parameters.Add(new SqlParameter("@Factura", factura));
+                    cmd.Parameters.Add(new SqlParameter("@Fecha_Factura", fecha));
+                    cmd.Parameters.Add(new SqlParameter("@Enviado", (enviado ? "SI" : "NO")));
+
+
+                    await sql.OpenAsync();
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            //response.Add(getListaOrdenesIniciadas(reader));
+                        }
+                    }
+                    sql.Close();
+                }
+            }
+        }
+        public async Task<string> CorreoEnviado(string empresa, string CodigoProveedor,string numeroLote)
+        {
+            string response = "";
+            using (SqlConnection sql = new SqlConnection(_connectionStringCubo))
+            {
+                using (SqlCommand cmd = new SqlCommand("[IM_GetCorreoEnviadoPagoProveedor]", sql))
+                {
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(new SqlParameter("@Empresa", empresa));
+                    cmd.Parameters.Add(new SqlParameter("@proveedor", CodigoProveedor));
+                    cmd.Parameters.Add(new SqlParameter("@numerolote", numeroLote));
+                    
+
+
+                    await sql.OpenAsync();
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            response = reader["Enviado"].ToString();
+                        }
+                    }
+                    sql.Close();
+                }
+            }
+            return response;
+        }
+
     }
 }
