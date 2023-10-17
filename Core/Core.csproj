@@ -5,6 +5,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="DTOs\Archivos.cs" />
+    <Compile Remove="DTOs\FacturasProveedor.cs" />
+    <Compile Remove="Interfaces\IFacturasProveedorRepository.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="DTOs\Archivos.cs" />
+    <None Include="DTOs\FacturasProveedor.cs" />
+    <None Include="Interfaces\IFacturasProveedorRepository.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ReportingServices\ReportingServices.csproj" />
   </ItemGroup>
 
