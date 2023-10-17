@@ -5,11 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Controllers\FacturasProveedorController.cs" />
-    <Compile Remove="Features\Repositories\FacturasProveedorRepository.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <COMReference Include="Microsoft.Office.Interop.Excel">
       <WrapperTool>tlbimp</WrapperTool>
       <VersionMinor>9</VersionMinor>
@@ -51,11 +46,6 @@
 
   <ItemGroup>
     <Folder Include="Reporting\images\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="Controllers\FacturasProveedorController.cs" />
-    <None Include="Features\Repositories\FacturasProveedorRepository.cs" />
   </ItemGroup>
 
   <ItemGroup>
