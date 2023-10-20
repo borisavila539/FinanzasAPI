@@ -48,6 +48,9 @@ namespace FinanzasAPI.Features.Repositories
             List<string> proveedoresSinCorreo = new();
             List<string> correosNoEnviados = new();
             List<string> correosDeArchivosNoEncontrados = new();
+            List<Envios> envios_CorreoPendiente = new();
+            List<Envios> envios_RetencionesPendientes = new();
+            List<Envios> envios_Error = new();
 
             try
             {
@@ -75,29 +78,16 @@ namespace FinanzasAPI.Features.Repositories
                 foreach (string proveedor in groupedProveedores)
                 {
                     List<Archivos> archivos = new();
+                    Envios envio = new();
                     FacturasProveedor facturaProveedor = facturasProveedor.Find(x => x.CuentaDelProveedor == proveedor);
                     bool esCorreo = Regex.IsMatch(facturaProveedor.Email, regex, RegexOptions.IgnoreCase);
                     int cantidadRetencionesProveedor = facturaProveedor.CantidadRetenciones;
 
                     if (esCorreo)
                     {
-                        List<string> retenDeFacturas = facturasProveedor.FindAll(x => x.CuentaDelProveedor == proveedor).Select(x => x.NumeroDeFactura).ToList();
                         List<string> facturas = new();
 
-                        foreach (string factura in retenDeFacturas)
-                        {
-                            bool tieneGuion= factura.IndexOf('-') > 0;
-                            string modifiedString = factura;
-
-                            if (tieneGuion)
-                            {
-                                int hyphenIndex = factura.LastIndexOf('-');
-                                modifiedString = factura.Substring(0, hyphenIndex);
-                            }
-                            facturas.Add(modifiedString);
-                        }
-
-                        facturas = facturas.Distinct().ToList();
+                        facturas = facturasDelProveedor(facturasProveedor, proveedor);
 
                         foreach (string factura in facturas)
                         {
@@ -137,20 +127,36 @@ namespace FinanzasAPI.Features.Repositories
                         if (archivos.Count < cantidadRetencionesAdjuntar)
                         {
                             correosDeArchivosNoEncontrados.Add(facturaProveedor.CuentaDelProveedor);
-                        }else
+
+
+                            envio.NumeroFactura = string.Join(", ", facturas);
+                            envio.CuentaProveedor = facturaProveedor.CuentaDelProveedor;
+                            envio.NombreProveedor = facturasProveedor.Where(x => x.CuentaDelProveedor == facturaProveedor.CuentaDelProveedor).Select(x => x.NombreDelProveedor).FirstOrDefault();
+                            envios_RetencionesPendientes.Add(envio);
+                        }
+                        else
                         {
-                            responseFromSend = composeEmail(fecha, retenDeFacturas, facturaProveedor.Email, correosRecibido, archivos, correosCopia);
+                            responseFromSend = composeEmail(fecha, facturas, facturaProveedor.Email, correosRecibido, archivos, correosCopia);
                             cantidadCorreosEnviados++;
 
                             if (responseFromSend != "")
                             {
                                 cantidadCorreosEnviados--;
                                 correosNoEnviados.Add(facturaProveedor.CuentaDelProveedor);
+                                envios_Error.Add(envio);
                             }
                         }
                     }
                     else
                     {
+                        List<string> facturas = new();
+                        facturas = facturasDelProveedor(facturasProveedor, proveedor);
+
+                        envio.CuentaProveedor = proveedor;
+                        envio.NombreProveedor = facturasProveedor.Where(x => x.CuentaDelProveedor == facturaProveedor.CuentaDelProveedor).Select(x => x.NombreDelProveedor).FirstOrDefault();
+                        envio.NumeroFactura = string.Join(", ", facturas);
+
+                        envios_CorreoPendiente.Add(envio);
                         proveedoresSinCorreo.Add(facturaProveedor.CuentaDelProveedor);
                     }
                 }
@@ -186,6 +192,14 @@ namespace FinanzasAPI.Features.Repositories
                         response += "No se pudo guardar en el log la factura " + factura.NumeroDeFactura + " del proveedor " + factura.CuentaDelProveedor;
                     }
                 }
+
+                if(envios_Error.Count > 0 || envios_CorreoPendiente.Count > 0 || envios_RetencionesPendientes.Count > 0)
+                {
+                    foreach (string correo in correosCopia)
+                    {
+                        string responseEmail = composeEmail_RetencionesEnviadas(correo, fecha, envios_Error, envios_RetencionesPendientes, envios_CorreoPendiente);
+                    }
+                }
             }
             catch (Exception e)
             {
@@ -210,6 +224,76 @@ namespace FinanzasAPI.Features.Repositories
             return response;
         }
 
+        public string composeEmail_RetencionesEnviadas(string correo, DateTime fecha, List<Envios> envios_Error, List<Envios> envios_RetencionesPendientes, List<Envios> envios_CorreoPendientes)
+        {
+            string response = "";
+
+            CultureInfo culture = new CultureInfo("es-ES", false);
+            string fechaWithFormat = fecha.ToString(culture.DateTimeFormat.LongDatePattern, culture);
+
+            string asunto = "Retenciones Pendientes", tablaHtml = "";
+            string textBody = "<p>Buen dia,</p>" +
+                              $"<p>El dia {fechaWithFormat} no se pudieron enviar las siguientes retenciones: </p>";
+
+            if (envios_RetencionesPendientes.Count > 0)
+            {
+                textBody += "<p><strong>Retenciones No Encontradas</strong></p>";
+                tablaHtml = "<table border=" + 1 + " cellpadding=" + 0 + " cellspacing=" + 0 + " width = " + 600 + "><tr bgcolor='#4da6ff'>" +
+                                  "<td><b>Cuenta del Proveedor</b></td>" +
+                                  "<td><b>Nombre del Proveedor</b></td>" +
+                                  "<td><b>Facturas</b></td>" +
+                                  "</tr>";
+
+                foreach (Envios envio in envios_RetencionesPendientes)
+                {
+                    tablaHtml += "<tr><td>" + envio.CuentaProveedor + "</td><td>" + envio.NombreProveedor + "</td><td>" + envio.NumeroFactura + "</td></tr>";
+                }
+
+                tablaHtml += "</table>";
+                textBody += tablaHtml;
+            }
+
+            if (envios_CorreoPendientes.Count > 0)
+            {
+                textBody += "<p><strong>Correos No Encontrados</strong></p>";
+                tablaHtml = "<table border=" + 1 + " cellpadding=" + 0 + " cellspacing=" + 0 + " width = " + 600 + "><tr bgcolor='#4da6ff'>" +
+                                  "<td><b>Cuenta del Proveedor</b></td>" +
+                                  "<td><b>Nombre del Proveedor</b></td>" +
+                                  "<td><b>Facturas</b></td>" +
+                                  "</tr>";
+
+                foreach (Envios envio in envios_CorreoPendientes)
+                {
+                    tablaHtml += "<tr><td>" + envio.CuentaProveedor + "</td><td>" + envio.NombreProveedor + "</td><td>" + envio.NumeroFactura + "</td></tr>";
+                }
+
+                tablaHtml += "</table>";
+                textBody += tablaHtml;
+            }
+
+            if (envios_Error.Count > 0)
+            {
+                textBody += "<p><strong>Error en Envio</strong></p>";
+                tablaHtml = "<table border=" + 1 + " cellpadding=" + 0 + " cellspacing=" + 0 + " width = " + 600 + "><tr bgcolor='#4da6ff'>" +
+                                  "<td><b>Cuenta del Proveedor</b></td>" +
+                                  "<td><b>Nombre del Proveedor</b></td>" +
+                                  "<td><b>Facturas</b></td>" +
+                                  "</tr>";
+
+                foreach (Envios envio in envios_Error)
+                {
+                    tablaHtml += "<tr><td>" + envio.CuentaProveedor + "</td><td>" + envio.NombreProveedor + "</td><td>" + envio.NumeroFactura + "</td></tr>";
+                }
+
+                tablaHtml += "</table>";
+                textBody += tablaHtml;
+            }
+
+            response = enviarCorreo(correo, asunto, textBody, null, null, null);
+
+            return response;
+        }
+
         public string enviarCorreo(string correoDestino, string asunto, string textBody, List<Archivos> archivos = null, byte[] imagen = null, List<string> copiasCorreo = null)
         {
             string response = "";
@@ -225,7 +309,7 @@ namespace FinanzasAPI.Features.Repositories
                 MailMessage OMailMesage = new MailMessage(emailOrigen, correoDestino, asunto, textBody);
                 OMailMesage.IsBodyHtml = true;
 
-                if (archivos.Count > 0)
+                if (archivos != null)
                 {
                     foreach (var archivo in archivos)
                     {
@@ -234,7 +318,7 @@ namespace FinanzasAPI.Features.Repositories
                     }
                 }
 
-                if (copiasCorreo.Count > 0)
+                if (copiasCorreo != null)
                 {
                     foreach (var correo in copiasCorreo)
                     {
@@ -282,6 +366,35 @@ namespace FinanzasAPI.Features.Repositories
             }
 
             return response;
+        }
+
+        public List<string> facturasDelProveedor(List<FacturasProveedor> facturasProveedor, string cuentaProveedor)
+        {
+            List<string> facturas = new();
+            List<string> retenDeFacturas = facturasProveedor.FindAll(x => x.CuentaDelProveedor == cuentaProveedor).Select(x => x.NumeroDeFactura).ToList();
+
+            foreach (string factura in retenDeFacturas)
+            {
+                facturas.Add(removeTextFromHyphen(factura));
+            }
+
+            facturas = facturas.Distinct().ToList();
+
+            return facturas;
+        }
+
+        public string removeTextFromHyphen(string factura)
+        {
+            bool tieneGuion = factura.IndexOf('-') > 0;
+            string modifiedString = factura;
+
+            if (tieneGuion)
+            {
+                int hyphenIndex = factura.LastIndexOf('-');
+                modifiedString = factura.Substring(0, hyphenIndex);
+            }
+
+            return modifiedString;
         }
 
         public async Task<int> GuardarHistorico(string cuenta, string email, string numFactura, string lote,string dataAreaId, bool estado)
@@ -348,6 +461,14 @@ namespace FinanzasAPI.Features.Repositories
 
             // Save the image data to the specified file
             File.WriteAllBytes(filePath, imageBytes);
+        }
+
+        public class Envios
+        {
+            public string NombreProveedor { get; set; }
+            public string CuentaProveedor { get; set; }
+            public string NumeroFactura { get;set; }    
+            public string? RetencionPendiente { get; set; }
         }
 
     }
