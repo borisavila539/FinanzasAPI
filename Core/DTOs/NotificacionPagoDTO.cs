@@ -18,5 +18,6 @@ namespace Core.DTOs
         public string divisa { get; set; }
         public double monto { get; set; }
         public string empresa { get; set; }
+        public string paymmode { get; set; }
     }
 }

@@ -78,7 +78,8 @@ namespace FinanzasAPI.Features.Repositories
                 NumeroFactura = reader["NumeroFactura"].ToString(),
                 divisa = reader["divisa"].ToString(),
                 monto = (double)reader["monto"],
-                empresa = reader["empresa"].ToString()
+                empresa = reader["empresa"].ToString(),
+                paymmode = reader["paymmode"].ToString()
             };
         }
 
@@ -277,7 +278,27 @@ namespace FinanzasAPI.Features.Repositories
 
                     //Cuerpo del correo
                     string html = $"<h3>Estimados señores de: {data[0].NombreProveedor}</h3>" +
-                                  $"<p>De parte de {data[0].empresa}, se le notifica que se realizo el pago en las siguientes facturas:</p>" +
+                                  $"<p>De parte de {data[0].empresa},";
+                    if(data[0].paymmode == "CHEQUE")
+                    {
+                        html += $"Hemos emitido un cheque por el pago de la(s) factura(s) detallada(s), favor organizar la recolecta para la próxima semana, en horario y sitio habitual.</p>";
+                        if (empresa == "IMHN")
+                        {
+                        html += $"<p>Dia de entrega: miercoles.</p>";
+
+                        }
+                        else
+                        {
+                            html += $"<p>Dia de entrega: viernes.</p>";
+
+                        }
+                    }
+                    else
+                    {
+                        html += "se le notifica que se realizo el pago en las siguientes facturas:</p>";
+                    }
+                    
+                    html +=
                                   "<table border = '1'>" +
                                         "<thead>" +
                                             "<tr>" +
@@ -296,10 +317,18 @@ namespace FinanzasAPI.Features.Repositories
 
                     data.ForEach(x =>
                     {
+                        string banco = "";
+                        string cuenta = "";
+                        if (x.paymmode != "CHEQUE")
+                        {
+                            banco = x.Nombrebanco;
+                            cuenta = x.Cuenta;
+                        }
+                        
                         html += "<tr>" +
                                     $"<td style='padding: 0px 5px;'> {x.fecha.ToString("MM/dd/yyyy")}</td>" +
-                                    $"<td style='padding: 0px 5px;'> {x.Nombrebanco}</td>" +
-                                    $"<td style='padding: 0px 5px;'>{x.Cuenta}</td>" +
+                                    $"<td style='padding: 0px 5px;'> {banco}</td>" +
+                                    $"<td style='padding: 0px 5px;'>{cuenta}</td>" +
                                     $"<td style='padding: 0px 5px;'>{x.NumeroFactura}</td>" +
                                     $"<td style='text-align:center;padding: 0px 5px;'>{x.divisa}</td>" +
                                     $"<td style='text-align:right;padding: 0px 5px;'>{x.monto.ToString("0,0.00", CultureInfo.InvariantCulture)}</td>" +
