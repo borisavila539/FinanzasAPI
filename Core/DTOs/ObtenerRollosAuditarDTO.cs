@@ -11,5 +11,6 @@ namespace Core.DTOs
         public string RollId { get; set; }
         public string ApVendRoll { get; set; }
         public string NameAlias { get; set; }
+        public string INVENTBATCHID { get; set; }
     }
 }

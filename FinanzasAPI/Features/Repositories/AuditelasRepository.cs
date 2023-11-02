@@ -21,7 +21,7 @@ namespace FinanzasAPI.Features.Repositories
             _connectionString = configuracion.GetConnectionString("MicrosoftDynamicsAX_PRO");
             _connectionStringCubo = configuracion.GetConnectionString("IMDesarrollos");
         }
-        public async Task<List<ObtenerRollosAuditarDTO>> GetRollosAuditar(string RollID, string ApVendRoll, int page, int size)
+        public async Task<List<ObtenerRollosAuditarDTO>> GetRollosAuditar(string RollID, string ApVendRoll, string importacion,string tela, int page, int size)
         {
             using (SqlConnection sql = new SqlConnection(_connectionString))
             {
@@ -37,6 +37,8 @@ namespace FinanzasAPI.Features.Repositories
                     {
                         cmd.Parameters.Add(new SqlParameter("@ApVendRoll", ApVendRoll));
                     }
+                    cmd.Parameters.Add(new SqlParameter("@importacion", importacion));
+                    cmd.Parameters.Add(new SqlParameter("@tela", tela));
                     cmd.Parameters.Add(new SqlParameter("@page", page));
                     cmd.Parameters.Add(new SqlParameter("@size", size));
 
@@ -127,28 +129,28 @@ namespace FinanzasAPI.Features.Repositories
         }
         public async Task<List<ObtenerDetalleRolloDTO>> getObtenerDetalleRollo(int Id)
         {
-                using (SqlConnection sql = new SqlConnection(_connectionStringCubo))
-                {
+            using (SqlConnection sql = new SqlConnection(_connectionStringCubo))
+            {
                 using (SqlCommand cmd = new SqlCommand("[IM_ObtenerDetalleRollo]", sql))
+                {
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+                    cmd.Parameters.Add(new SqlParameter("@Id", Id));
+
+                    var response = new List<ObtenerDetalleRolloDTO>();
+
+                    await sql.OpenAsync();
+
+                    using (var reader = await cmd.ExecuteReaderAsync())
                     {
-                        cmd.CommandType = System.Data.CommandType.StoredProcedure;
-
-                        cmd.Parameters.Add(new SqlParameter("@Id", Id));
-
-                        var response = new List<ObtenerDetalleRolloDTO>();
-
-                        await sql.OpenAsync();
-
-                        using (var reader = await cmd.ExecuteReaderAsync())
+                        while (await reader.ReadAsync())
                         {
-                            while (await reader.ReadAsync())
-                            {
-                                response.Add(getObtenerDetalleRollo(reader));
-                            }
+                            response.Add(getObtenerDetalleRollo(reader));
                         }
-                        return response;
                     }
+                    return response;
                 }
+            }
         }
 
         public async Task<List<ActualizarRollosDTO>> postActualizarRollos(List<ActualizarRollosDTO> datos)
@@ -178,9 +180,9 @@ namespace FinanzasAPI.Features.Repositories
                 }
             }
             return response;
-        }  
-   
-public ObtenerDatosDefectosDTO GetDatosDefectos(SqlDataReader reader)
+        }
+
+        public ObtenerDatosDefectosDTO GetDatosDefectos(SqlDataReader reader)
         {
             return new ObtenerDatosDefectosDTO()
             {
@@ -200,7 +202,8 @@ public ObtenerDatosDefectosDTO GetDatosDefectos(SqlDataReader reader)
             {
                 RollId = reader["RollId"].ToString(),
                 ApVendRoll = reader["ApVendRoll"].ToString(),
-                NameAlias = reader["NameAlias"].ToString()
+                NameAlias = reader["NameAlias"].ToString(),
+                INVENTBATCHID = reader["INVENTBATCHID"].ToString()
             };
         }
         public DatosRollosInsertDTOs getDatosRollosInsert(SqlDataReader reader)
@@ -234,7 +237,7 @@ public ObtenerDatosDefectosDTO GetDatosDefectos(SqlDataReader reader)
                 id = Convert.ToInt32(reader["id"].ToString()),
                 Id_Pieza = reader["Id_Pieza"].ToString(),
                 Numero_Rollo_Proveedor = reader["Numero_Rollo_Proveedor"].ToString(),
-                
+
             };
         }
         public async Task<List<ObtenerDatosDefectosDTO>> GetDatosDefectos(int idRollo)
@@ -266,7 +269,7 @@ public ObtenerDatosDefectosDTO GetDatosDefectos(SqlDataReader reader)
             throw new NotImplementedException();
         }
 
-        public async Task<List<InsertarAnchoYardasDTO>> getDatosRollo(string Id_Pieza,string Numero_Rollo_Proveedor)
+        public async Task<List<InsertarAnchoYardasDTO>> getDatosRollo(string Id_Pieza, string Numero_Rollo_Proveedor)
         {
             var response = new List<InsertarAnchoYardasDTO>();
 
@@ -306,6 +309,113 @@ public ObtenerDatosDefectosDTO GetDatosDefectos(SqlDataReader reader)
                 Observaciones = reader["Observaciones"].ToString()
             };
         }
+
+        public async Task<List<PruebaCalidadDTO>> postPruebasCalidad(List<PruebaCalidadDTO> datos)
+        {
+            var response = new List<PruebaCalidadDTO>();
+            using (SqlConnection sql1 = new SqlConnection(_connectionString))
+            {
+                using (SqlCommand cmd1 = new SqlCommand("[IM_InsertPruebaCalidadTela]", sql1))
+                {
+                    var rollo = new List<ObtenerDetalleRolloDTO>();
+                    rollo = await getObtenerDetalleRollo(datos[0].Id_Rollo);
+                    cmd1.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd1.Parameters.Add(new SqlParameter("@rollid", rollo[0].Id_Pieza));
+                    cmd1.Parameters.Add(new SqlParameter("@trama1", datos[0].Trama1));
+                    cmd1.Parameters.Add(new SqlParameter("@trama2", datos[0].Trama2));
+                    cmd1.Parameters.Add(new SqlParameter("@trama3", datos[0].Trama3));
+                    cmd1.Parameters.Add(new SqlParameter("@undimbre1", datos[0].undimbre1));
+                    cmd1.Parameters.Add(new SqlParameter("@undimbre2", datos[0].undimbre2));
+                    cmd1.Parameters.Add(new SqlParameter("@undimbre3", datos[0].undimbre3));
+                    cmd1.Parameters.Add(new SqlParameter("@torsionAC", datos[0].Torsion_AC));
+                    cmd1.Parameters.Add(new SqlParameter("@torsionBD", datos[0].Torsion_BD));
+
+                    await sql1.OpenAsync();
+                    using (var reader1 = await cmd1.ExecuteReaderAsync())
+                    {
+                        while (await reader1.ReadAsync())
+                        {
+                            //response.Add(getListaPruebasCalidad(reader));
+                        }
+                    }
+
+                }
+            }
+
+            using (SqlConnection sql = new SqlConnection(_connectionStringCubo))
+            {
+                using (SqlCommand cmd = new SqlCommand("[IM_InsertPruebaCalidad]", sql))
+                {
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(new SqlParameter("@rolloid", datos[0].Id_Rollo));
+                    cmd.Parameters.Add(new SqlParameter("@usuarioID", datos[0].UsuarioID));
+                    cmd.Parameters.Add(new SqlParameter("@trama1", datos[0].Trama1));
+                    cmd.Parameters.Add(new SqlParameter("@trama2", datos[0].Trama2));
+                    cmd.Parameters.Add(new SqlParameter("@trama3", datos[0].Trama3));
+                    cmd.Parameters.Add(new SqlParameter("@undimbre1", datos[0].undimbre1));
+                    cmd.Parameters.Add(new SqlParameter("@undimbre2", datos[0].undimbre2));
+                    cmd.Parameters.Add(new SqlParameter("@undimbre3", datos[0].undimbre3));
+                    cmd.Parameters.Add(new SqlParameter("@torsionAC", datos[0].Torsion_AC));
+                    cmd.Parameters.Add(new SqlParameter("@torsionBD", datos[0].Torsion_BD));
+                    
+                    await sql.OpenAsync();
+
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            response.Add(getListaPruebasCalidad(reader));
+                        }
+                    }
+                }
+            }
+            return response;
+
+        }
+        public PruebaCalidadDTO getListaPruebasCalidad(SqlDataReader reader)
+        {
+            return new PruebaCalidadDTO()
+            {
+                Id_Rollo = Convert.ToInt32(reader["Id_Rollo"].ToString()),
+                Trama1 = Convert.ToDouble(reader["Trama1"].ToString()),
+                Trama2 = Convert.ToDouble(reader["Trama2"].ToString()),
+                Trama3 = Convert.ToDouble(reader["Trama3"].ToString()),
+                undimbre1 = Convert.ToDouble(reader["undimbre1"].ToString()),
+                undimbre2 = Convert.ToDouble(reader["undimbre2"].ToString()),
+                undimbre3 = Convert.ToDouble(reader["undimbre3"].ToString()),
+                Torsion_AC = Convert.ToDouble(reader["Torsion_AC"].ToString()),
+                Torsion_BD = Convert.ToDouble(reader["Torsion_BD"].ToString()),
+                UsuarioID = Convert.ToInt32(reader["UsuarioID"].ToString())
+            };
+
+        }
+
+        public async Task<List<PruebaCalidadDTO>> getPruebasCalidad(int id_rollo)
+        {
+            var response = new List<PruebaCalidadDTO>();
+
+            using (SqlConnection sql = new SqlConnection(_connectionStringCubo))
+            {
+                using (SqlCommand cmd = new SqlCommand("[IM_Obtener_Prueba_Calidad]", sql))
+                {
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(new SqlParameter("@rolloid", id_rollo));
+
+                    await sql.OpenAsync();
+
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            response.Add(getListaPruebasCalidad(reader));
+                        }
+                    }
+                }
+            }
+            return response;
+        }
     }
+
+
 }
 

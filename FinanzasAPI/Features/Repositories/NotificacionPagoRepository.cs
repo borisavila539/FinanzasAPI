@@ -392,7 +392,7 @@ namespace FinanzasAPI.Features.Repositories
                     smtpClient.Dispose();
                     data.ForEach(x =>
                     {
-                        sendHisttory(empresa, datos[0].proveedorNum, datos[0].correo, numerolote, x.NumeroFactura, x.fecha, true);
+                        sendHisttory(empresa, data[0].proveedorNum, data[0].correo, numerolote, x.NumeroFactura, x.fecha, true);
 
                     });
                 }
@@ -402,7 +402,7 @@ namespace FinanzasAPI.Features.Repositories
                     {
                         data.ForEach(x =>
                         {
-                            sendHisttory(empresa, datos[0].proveedorNum, datos[0].correo, numerolote, x.NumeroFactura, x.fecha, false);
+                            sendHisttory(empresa, data[0].proveedorNum, data[0].correo, numerolote, x.NumeroFactura, x.fecha, false);
 
                         });
                     }

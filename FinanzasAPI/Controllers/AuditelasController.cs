@@ -26,10 +26,10 @@ namespace FinanzasAPI.Controllers
             return resp;
         }
 
-        [HttpGet("{RollID}/{ApVendRoll}/{page}/{size}")]
-        public async Task<ActionResult<IEnumerable<ObtenerRollosAuditarDTO>>> getRollosAuditar(string RollID, string ApVendRoll, int page, int size)
+        [HttpGet("{RollID}/{ApVendRoll}/{importacion}/{tela}/{page}/{size}")]
+        public async Task<ActionResult<IEnumerable<ObtenerRollosAuditarDTO>>> getRollosAuditar(string RollID, string ApVendRoll,string importacion,string tela, int page, int size)
         {
-            var resp = await _audiTelasRepository.GetRollosAuditar(RollID,ApVendRoll,page,size);
+            var resp = await _audiTelasRepository.GetRollosAuditar(RollID,ApVendRoll,importacion,tela,page,size);
             return resp;
         }
         [HttpPost("DatosRollosInsert")]
@@ -69,6 +69,19 @@ namespace FinanzasAPI.Controllers
             var resp = await _audiTelasRepository.getDatosRollo(Id_Pieza, Numero_Rollo_Proveedor);
             return resp;
         }
+        [HttpPost("InsertPruebaCalidad")]
+        public async Task<ActionResult<IEnumerable<PruebaCalidadDTO>>> postPruebasCalidad(List<PruebaCalidadDTO> datos)
+        {
+            var resp = await _audiTelasRepository.postPruebasCalidad(datos);
+            return resp;
+        }
+        [HttpGet("GetPruebaCalidad/{id}")]
+        public async Task<ActionResult<IEnumerable<PruebaCalidadDTO>>> getPruebasCalidad(int id)
+        {
+            var resp = await _audiTelasRepository.getPruebasCalidad(id);
+            return resp;
+        }
+
 
 
     }
