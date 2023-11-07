@@ -92,6 +92,12 @@ namespace FinanzasAPI.Controllers
             return resp;
 
         }
+        [HttpGet("HistoricoEstadoOrden/{id}")]
+        public async Task<ActionResult<IEnumerable<ComentariosDTO>>> GetHistoricoEstdoOrden(int id)
+        {
+            var resp = await _pantsQuality.GetHistoricoEstdoOrden(id);
+            return Ok(resp);
+        }
 
 
 

@@ -904,5 +904,43 @@ namespace FinanzasAPI.Features.Repositories
                 
             };
         }
+
+        public async Task<List<HistoricoEstdoOrdenDTO>> GetHistoricoEstdoOrden(int masterId)
+        {
+            var response = new List<HistoricoEstdoOrdenDTO>();
+            using (SqlConnection sql = new SqlConnection(_connectionStringCubo))
+            {
+                using (SqlCommand cmd = new SqlCommand("[IM_ObtenerEstadoOrdenes]", sql))
+                {
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(new SqlParameter("@id", masterId));
+
+                    await sql.OpenAsync();
+
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            response.Add(getListaHistoricoEstado(reader));
+                        }
+                    }
+
+                }
+
+            }
+            return response;
+        }
+        public HistoricoEstdoOrdenDTO getListaHistoricoEstado(SqlDataReader reader)
+        {
+            return new HistoricoEstdoOrdenDTO()
+            {
+               ID = Convert.ToInt32(reader["ID"].ToString()),
+               usuario = Convert.ToString(reader["Nombre"].ToString()),
+               Modulo = Convert.ToString(reader["Modulo"].ToString()),
+                Estado = Convert.ToBoolean(reader["Estado"].ToString()),
+                Fecha = Convert.ToDateTime(reader["Fecha"].ToString())
+
+            };
+        }
     }
 }

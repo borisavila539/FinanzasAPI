@@ -18,5 +18,6 @@ namespace Core.Interfaces
         public Task<List<ComentarioDTO>> postComentario(List<ComentarioDTO> comentario);
         public Task<List<ComentariosDTO>> getComentarios(int masterId);
         public Task<List<ModulosCalidadDTO>> GetModulosCalidad();
+        public Task<List<HistoricoEstdoOrdenDTO>> GetHistoricoEstdoOrden(int masterId);
     }
 }
