@@ -522,7 +522,8 @@ namespace FinanzasAPI.Features.Repositories
         {
             var medidas = await GetMedidas();
             var lista = new List<DatosMedidasDtos>();
-            string ruta = @"\\10.100.0.41\Auditoria\" + prodmasterid.Replace(" ", "-") + ".xlsx";
+            var orden = prodmasterid.Substring(0, 11);
+            string ruta = @"\\10.100.0.41\Auditoria\" + orden + ".xlsx";
             if(File.Exists(ruta))
             {
 
@@ -530,7 +531,7 @@ namespace FinanzasAPI.Features.Repositories
             {
                 application = new Application();
 
-                application.Workbooks.Open(@"\\10.100.0.41\Auditoria\" + prodmasterid.Replace(" ", "-") + ".xlsx");
+                application.Workbooks.Open(@"\\10.100.0.41\Auditoria\" + orden + ".xlsx");
                 workbook = application.Workbooks.Item[1];
                 worksheet = workbook.ActiveSheet;
                 ((Worksheet)worksheet.Application.ActiveWorkbook.Sheets[1]).Select();
