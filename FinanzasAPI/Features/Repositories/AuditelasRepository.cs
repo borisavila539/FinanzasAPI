@@ -21,7 +21,7 @@ namespace FinanzasAPI.Features.Repositories
             _connectionString = configuracion.GetConnectionString("MicrosoftDynamicsAX_PRO");
             _connectionStringCubo = configuracion.GetConnectionString("IMDesarrollos");
         }
-        public async Task<List<ObtenerRollosAuditarDTO>> GetRollosAuditar(string RollID, string ApVendRoll, string importacion,string tela, int page, int size)
+        public async Task<List<ObtenerRollosAuditarDTO>> GetRollosAuditar(string RollID, string ApVendRoll, string importacion, string tela, int page, int size)
         {
             using (SqlConnection sql = new SqlConnection(_connectionString))
             {
@@ -357,7 +357,7 @@ namespace FinanzasAPI.Features.Repositories
                     cmd.Parameters.Add(new SqlParameter("@undimbre3", datos[0].undimbre3));
                     cmd.Parameters.Add(new SqlParameter("@torsionAC", datos[0].Torsion_AC));
                     cmd.Parameters.Add(new SqlParameter("@torsionBD", datos[0].Torsion_BD));
-                    
+
                     await sql.OpenAsync();
 
                     using (var reader = await cmd.ExecuteReaderAsync())
@@ -414,8 +414,136 @@ namespace FinanzasAPI.Features.Repositories
             }
             return response;
         }
-    }
 
+        public async Task<List<AnchoRolloDTO>> setAnchoRollo(string Rollid, decimal Width)
+        {
+            var response = new List<AnchoRolloDTO>();
+            using (SqlConnection sql = new SqlConnection(_connectionString))
+            {
+                using (SqlCommand cmd = new SqlCommand("[IM_ActualizarAnchoRollo]", sql))
+                {
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(new SqlParameter("@RollId", Rollid));
+                    cmd.Parameters.Add(new SqlParameter("@width", Width));
+
+
+                    await sql.OpenAsync();
+
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            response.Add(getListaAnchoRollo(reader));
+                        }
+                    }
+                }
+            }
+
+            return response;
+        }
+        public AnchoRolloDTO getListaAnchoRollo(SqlDataReader reader)
+        {
+            return new AnchoRolloDTO()
+            {
+                Rollid = reader["ROLLID"].ToString(),
+                Width = Convert.ToDecimal(reader["WIDTH"].ToString())
+            };
+        }
+
+        public async  Task<List<RollosImporteLoteDTO>> getRollosImporteLote(string Importacion, string Lote,string tela)
+        {
+            var response = new List<RollosImporteLoteDTO>();
+            using (SqlConnection sql = new SqlConnection(_connectionString))
+            {
+                using (SqlCommand cmd = new SqlCommand("[IM_BuscarRollosImportLote]", sql))
+                {
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(new SqlParameter("@importacion", Importacion));
+                    cmd.Parameters.Add(new SqlParameter("@lote", Lote));
+                    cmd.Parameters.Add(new SqlParameter("@tela", tela));
+
+
+                    await sql.OpenAsync();
+
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            response.Add(getListaRolloImporteLote(reader));
+                        }
+                    }
+                }
+            }
+
+            return response;
+        }
+        public RollosImporteLoteDTO getListaRolloImporteLote(SqlDataReader reader)
+        {
+            return new RollosImporteLoteDTO()
+            {
+                ROLLID = reader["ROLLID"].ToString(),
+                APVENDROLL = reader["APVENDROLL"].ToString(),
+                NAMEALIAS = reader["NAMEALIAS"].ToString(),
+                INVENTBATCHID = reader["INVENTBATCHID"].ToString(),
+
+            };
+        }
+
+        public async Task<List<PruebaCalidadLoteDTO>> postPruebaCalidadLote(List<PruebaCalidadLoteDTO> datos)
+        {
+            var response = new List<PruebaCalidadLoteDTO>();
+            int cont = 0;
+            try
+            {
+                datos.ForEach(async (x) => {
+                    using (SqlConnection sql1 = new SqlConnection(_connectionString))
+                    {
+                        using (SqlCommand cmd1 = new SqlCommand("[IM_InsertPruebaCalidadTela]", sql1))
+                        {
+
+                            cmd1.CommandType = System.Data.CommandType.StoredProcedure;
+                            cmd1.Parameters.Add(new SqlParameter("@rollid", x.Id_Rollo));
+                            cmd1.Parameters.Add(new SqlParameter("@trama1", x.Trama1));
+                            cmd1.Parameters.Add(new SqlParameter("@trama2", x.Trama2));
+                            cmd1.Parameters.Add(new SqlParameter("@trama3", x.Trama3));
+                            cmd1.Parameters.Add(new SqlParameter("@undimbre1", x.undimbre1));
+                            cmd1.Parameters.Add(new SqlParameter("@undimbre2", x.undimbre2));
+                            cmd1.Parameters.Add(new SqlParameter("@undimbre3", x.undimbre3));
+                            cmd1.Parameters.Add(new SqlParameter("@torsionAC", x.Torsion_AC));
+                            cmd1.Parameters.Add(new SqlParameter("@torsionBD", x.Torsion_BD));
+
+                            await sql1.OpenAsync();
+                            using (var reader1 = await cmd1.ExecuteReaderAsync())
+                            {
+                                while (await reader1.ReadAsync())
+                                {
+                                    cont++;
+                                }
+                            }
+                            await sql1.CloseAsync();
+
+
+                        }
+                    }
+                });
+
+
+                datos.ForEach(x =>
+                {
+                    response.Add(x);
+                });
+                return response;
+            }
+            catch (Exception err)
+            {
+                return null;
+            }
+
+            
+            
+            
+        }
+    }
 
 }
 

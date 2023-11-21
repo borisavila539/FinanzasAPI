@@ -8,12 +8,12 @@ namespace FinanzasAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuditelasController: ControllerBase
+    public class AuditelasController : ControllerBase
     {
         private readonly IAudiTelasRepository _audiTelasRepository;
         private readonly IAX _aX;
 
-        public AuditelasController(IAudiTelasRepository audiTelasRepository,  IAX aX)
+        public AuditelasController(IAudiTelasRepository audiTelasRepository, IAX aX)
         {
             _audiTelasRepository = audiTelasRepository;
             _aX = aX;
@@ -21,15 +21,15 @@ namespace FinanzasAPI.Controllers
         [HttpGet("EnvioAX/{id}")]
         public string GetEnvioAX(int id)
         {
-            var resp =  _aX.InsertDefectos(id);
-           
+            var resp = _aX.InsertDefectos(id);
+
             return resp;
         }
 
         [HttpGet("{RollID}/{ApVendRoll}/{importacion}/{tela}/{page}/{size}")]
-        public async Task<ActionResult<IEnumerable<ObtenerRollosAuditarDTO>>> getRollosAuditar(string RollID, string ApVendRoll,string importacion,string tela, int page, int size)
+        public async Task<ActionResult<IEnumerable<ObtenerRollosAuditarDTO>>> getRollosAuditar(string RollID, string ApVendRoll, string importacion, string tela, int page, int size)
         {
-            var resp = await _audiTelasRepository.GetRollosAuditar(RollID,ApVendRoll,importacion,tela,page,size);
+            var resp = await _audiTelasRepository.GetRollosAuditar(RollID, ApVendRoll, importacion, tela, page, size);
             return resp;
         }
         [HttpPost("DatosRollosInsert")]
@@ -79,6 +79,27 @@ namespace FinanzasAPI.Controllers
         public async Task<ActionResult<IEnumerable<PruebaCalidadDTO>>> getPruebasCalidad(int id)
         {
             var resp = await _audiTelasRepository.getPruebasCalidad(id);
+            return resp;
+        }
+
+        [HttpGet("setAnchoRollo/{RollId}/{Width}")]
+        public async Task<ActionResult<IEnumerable<AnchoRolloDTO>>> setAnchoRollo(string RollId, decimal Width)
+            {
+            var resp = await _audiTelasRepository.setAnchoRollo(RollId, Width);
+            return resp;
+        }
+
+        [HttpGet("getRolloImportacionLote/{Importacion}/{Lote}/{tela}")]
+        public async Task<ActionResult<IEnumerable<RollosImporteLoteDTO>>> gteRolloImportacionLote(string Importacion, string Lote,string tela)
+        {
+            var resp = await _audiTelasRepository.getRollosImporteLote(Importacion, Lote,tela);
+            return resp;
+        }
+
+        [HttpPost("InsertPruebaCalidadLote")]
+        public async Task<ActionResult<IEnumerable<PruebaCalidadLoteDTO>>> postPruebasCalidadLote(List<PruebaCalidadLoteDTO> datos)
+        {
+            var resp = await _audiTelasRepository.postPruebaCalidadLote(datos);
             return resp;
         }
 
