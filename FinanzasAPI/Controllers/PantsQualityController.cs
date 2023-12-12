@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Core.DTOs;
+using Microsoft.AspNetCore.Http;
+using System.IO;
 
 namespace FinanzasAPI.Controllers
 {
@@ -30,10 +32,10 @@ namespace FinanzasAPI.Controllers
             return Ok(resp);
         }
 
-        [HttpGet("tallas/{itemid}")]
-        public async Task<ActionResult<IEnumerable<ItemTallasDTOS>>> GetTallasItem(string itemid)
+        [HttpGet("tallas/{itemid}/{prodmasterrefid}")]
+        public async Task<ActionResult<IEnumerable<ItemTallasDTOS>>> GetTallasItem(string itemid, string prodmasterrefid)
         {
-            var resp = await _pantsQuality.GetItemTallas(itemid);
+            var resp = await _pantsQuality.GetItemTallas(itemid, prodmasterrefid);
             return Ok(resp);
         }
 
@@ -97,6 +99,58 @@ namespace FinanzasAPI.Controllers
         {
             var resp = await _pantsQuality.GetHistoricoEstdoOrden(id);
             return Ok(resp);
+        }
+
+        [HttpGet("DatosExcel/{prodmasterid}/{itemid}")]
+        public Task<string> GetDatosExcel(string prodmasterid, string itemid)
+        {
+             var resp = _pantsQuality.getDatosExcel(prodmasterid,itemid);
+            return resp;
+        }
+
+        [HttpPost("subirarchivo")]
+        public async Task<string> postExcelCalidad(IFormCollection archivo)
+        {
+            string response = "";
+            try
+            {
+                if (Request.Form.Files.Count > 0)
+                {
+                    var file = Request.Form.Files[0];
+                    string uploadFolerPath = @"\\10.100.0.41\\Auditoria";
+
+                    if( !Directory.Exists(uploadFolerPath))
+                    {
+                        Directory.CreateDirectory(uploadFolerPath);
+                    }
+
+                    string fileName = Path.GetFileNameWithoutExtension(file.FileName);
+                    
+
+                    var filePath = Path.Combine(uploadFolerPath, file.FileName);
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                        //tomar lectura del archivo de excel
+                        var resp = await _pantsQuality.GetOrdenesInicialdas(0, 1, fileName);
+                        var datos= await this.GetDatosExcel(fileName, resp[0].ITEMID);
+                        if (datos == "no")
+                        {
+                            response = "Error al leer el archivo";
+                        }
+                        else
+                        {
+                            response = "SI";
+                        }
+                    }
+                    
+                }
+            }
+            catch
+            {
+                response = "NO";
+            }
+            return response;
         }
 
 
