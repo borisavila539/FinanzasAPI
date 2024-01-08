@@ -6,6 +6,8 @@ using Core.DTOs;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 
+
+
 namespace FinanzasAPI.Controllers
 {
     [Route("api/[controller]")]
@@ -109,48 +111,67 @@ namespace FinanzasAPI.Controllers
         }
 
         [HttpPost("subirarchivo")]
-        public async Task<string> postExcelCalidad(IFormCollection archivo)
+        public async Task<List<ResponseDTO>> postExcelCalidad(IFormCollection archivo)
         {
-            string response = "";
+            var lista = new List<ResponseDTO>();
+            
             try
             {
                 if (Request.Form.Files.Count > 0)
                 {
-                    var file = Request.Form.Files[0];
                     string uploadFolerPath = @"\\10.100.0.41\\Auditoria";
 
-                    if( !Directory.Exists(uploadFolerPath))
+                    foreach (var file in Request.Form.Files)
                     {
-                        Directory.CreateDirectory(uploadFolerPath);
-                    }
-
-                    string fileName = Path.GetFileNameWithoutExtension(file.FileName);
-                    
-
-                    var filePath = Path.Combine(uploadFolerPath, file.FileName);
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await file.CopyToAsync(stream);
-                        //tomar lectura del archivo de excel
-                        var resp = await _pantsQuality.GetOrdenesInicialdas(0, 1, fileName);
-                        var datos= await this.GetDatosExcel(fileName, resp[0].ITEMID);
-                        if (datos == "no")
+                        if (!Directory.Exists(uploadFolerPath))
                         {
-                            response = "Error al leer el archivo";
+                            Directory.CreateDirectory(uploadFolerPath);
                         }
-                        else
+
+                        string fileName = Path.GetFileNameWithoutExtension(file.FileName);
+
+
+                        var filePath = Path.Combine(uploadFolerPath, file.FileName);
+                        using (var stream = new FileStream(filePath, FileMode.Create))
                         {
-                            response = "SI";
+                            ResponseDTO response = new ResponseDTO();
+                            string ruta = uploadFolerPath + "\\" + fileName + ".xlsx";
+                            
+                            await file.CopyToAsync(stream);
+
+                            
+                            //tomar lectura del archivo de excel
+                            var resp = await _pantsQuality.GetOrdenesInicialdas(0, 1, fileName);
+                            if (resp.Count > 0)
+                            {
+                                var datos = await this.GetDatosExcel(fileName, resp[0].ITEMID);
+                                if (datos.Substring(0,2) == "no")
+                                {
+                                    response.response = fileName + ": Error al leer el archivo - " + datos.Substring(3,100);
+                                }
+                                else
+                                {
+                                    response.response = fileName + ": Carga exitosa";
+                                }
+                            }
+                            else
+                            {
+                                response.response = fileName + ": Orden no iniciada";
+
+                            }
+                            lista.Add(response);
+
+
                         }
-                    }
-                    
+
+                    }                             
                 }
             }
-            catch
+            catch(IOException err)
             {
-                response = "NO";
+                return lista;
             }
-            return response;
+            return lista;
         }
 
 

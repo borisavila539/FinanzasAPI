@@ -6,6 +6,7 @@ using Infraestructure.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Office.Interop.Excel;
+using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -26,15 +27,17 @@ namespace FinanzasAPI.Features.Repositories
         private readonly AxContext _context;
         private List<OrdenesInicialdasDTO> ordenesInicialdas = new List<OrdenesInicialdasDTO>();
 
-        private Application application;
+        /*private Application application;
         private Workbook workbook;
-        private Worksheet worksheet;
+        private Worksheet worksheet;*/
+        
+        ExcelWorksheet worksheet = null;
 
         public PantsQualityRepository(AxContext context, IConfiguration configuracion)
         {
             _context = context;
             _connectionString = configuracion.GetConnectionString("MicrosoftDynamicsAX_PRO");
-            _connectionStringCubo = configuracion.GetConnectionString("IMDesarrollos");
+            _connectionStringCubo = configuracion.GetConnectionString("IMFinanzas");
 
         }
         public async Task<List<OrdenesInicialdasDTO>> GetOrdenesInicialdas(int page, int size, string filtro)
@@ -243,11 +246,11 @@ namespace FinanzasAPI.Features.Repositories
                 var cellvalue = "";
                 try
                 {
-                    cellvalue = (string)(worksheet.Cells[14, i] as Microsoft.Office.Interop.Excel.Range).Value;
+                    cellvalue = (string)worksheet.Cells[14, i].Value;
                 }
                 catch (Exception)
                 {
-                    cellvalue = Convert.ToString((double)(worksheet.Cells[14, i] as Microsoft.Office.Interop.Excel.Range).Value);
+                    cellvalue = Convert.ToString((double)worksheet.Cells[14, i].Value);
                 }
 
                 if (cellvalue == talla)
@@ -303,7 +306,7 @@ namespace FinanzasAPI.Features.Repositories
 
         public async Task<List<ItemTallasDTOS>> GetItemTallas(string itemid, string prodmasterrefid)
         {
-            using (SqlConnection sql = new SqlConnection(_connectionString))
+            using (SqlConnection sql = new SqlConnection(_connectionStringCubo))
             {
                 using (SqlCommand cmd = new SqlCommand("[IM_ObtenerTallasOrdenes]", sql))
                 {
@@ -742,14 +745,187 @@ namespace FinanzasAPI.Features.Repositories
             {
                 try
                 {
-                    application = new Application();
+                    ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+                    using (ExcelPackage package = new ExcelPackage(ruta))
+                    {
+                        worksheet = package.Workbook.Worksheets[0];
+                        //Buscar donde se encuentran los campos de tolerancia
+                        for (int i = 15; i < 100; i++)
+                        {
+                            var cellvalue = (string)worksheet.Cells[13, i].Value;
+                            if (cellvalue == "Tolerancia")
+                            {
+                                tolerancia = i;
+                                break;
+                            }
+
+                        }
+
+                        for (int lavado = 0; lavado <= 1; lavado++)
+                        {
+                            int fila = 14;
+                            foreach (var medida in medidas)
+                            {
+                                //buscar la fila donde se encuentra la medida 
+                                excel.Medida_ID = medida.id;
+
+                                for (int i = fila + 2; i <= 100; i++)
+                                {
+                                    var cellvalue = (string)worksheet.Cells[i, 1].Value;
+                                    if (medida.Nombre == cellvalue)
+                                    {
+                                        fila = i;
+                                        break;
+                                    }
+
+                                }
+                                int columna = 1;
+                                //en caso de ser desdepues del lavado buscar donde estan posicionadas esas medidas
+                                if (lavado == 1)
+                                {
+                                    for (int i = 10; i <= 100; i++)
+                                    {
+                                        var cellvalue = "";
+                                        try
+                                        {
+                                            cellvalue = (string)worksheet.Cells[14, i].Value;
+                                        }
+                                        catch
+                                        {
+                                            cellvalue = Convert.ToString((double)worksheet.Cells[14, i].Value);
+                                        }
+                                        if (cellvalue == "MEDIDAS")
+                                        {
+                                            columna = i;
+                                            break;
+                                        }
+                                    }
+
+
+                                }
+
+                                //obtener los mensajes
+                                excel.Lavado = lavado;
+
+                                try
+                                {
+                                    excel.Intruccion_1 = (string)worksheet.Cells[fila, columna + 1].Value;
+                                }
+                                catch (Exception ex)
+                                {
+                                    excel.Intruccion_1 = Convert.ToString(Math.Round((double)worksheet.Cells[fila, columna + 1].Value, 4));
+                                }
+                                try
+                                {
+                                    excel.Intruccion_2 = (string)worksheet.Cells[fila + 1, columna + 1].Value;
+                                }
+                                catch (Exception ex)
+                                {
+                                    excel.Intruccion_2 = Convert.ToString(Math.Round((double)worksheet.Cells[fila + 1, columna + 1].Value, 4));
+                                }
+                                try
+                                {
+                                    excel.Intruccion_3 = (string)worksheet.Cells[fila + 2, columna + 1].Value;
+                                }
+                                catch (Exception ex)
+                                {
+                                    excel.Intruccion_3 = Convert.ToString(Math.Round((double)worksheet.Cells[fila + 2, columna + 1].Value, 4));
+                                }
+
+                                //obtener las tolerancias
+                                excel.Tolerancia_1 = (string)worksheet.Cells[fila, tolerancia].Value;
+                                excel.Tolerancia_2 = (string)worksheet.Cells[fila, tolerancia + 1].Value;
+
+                                var tallas = await GetItemTallas(itemid, orden);
+                                int columnaNueva = columna;
+                                foreach (var talla in tallas)
+                                {
+                                    //talla del articulo
+                                    excel.Talla = talla.SIZEID;
+
+                                    //altura del asiento
+                                    int col = GetColumna(talla.SIZEID, columnaNueva, fila);
+                                    columnaNueva = col + 1;
+                                    if (col != columna)
+                                    {
+                                        try
+                                        {
+                                            excel.Altura_Asiento = (string)worksheet.Cells[15, col].Value;
+
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            excel.Altura_Asiento = Convert.ToString(Math.Round((double)worksheet.Cells[15, col].Value, 4));
+
+                                        }
+
+
+
+
+                                        //obtener spec
+                                        try
+                                        {
+                                            excel.Spec = (string)worksheet.Cells[fila, col].Value;
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            excel.Spec = Convert.ToString(Math.Round((double)worksheet.Cells[fila, col].Value, 4));
+                                        }
+
+                                    }
+                                    else
+                                    {
+                                        excel.Altura_Asiento = "";
+                                        excel.Spec = "";
+                                    }
+
+
+                                    //Enviar Datos medidas
+                                    using (SqlConnection sql = new SqlConnection(_connectionStringCubo))
+                                    {
+                                        using (SqlCommand cmd = new SqlCommand("[IM_InsertPantsQualityData]", sql))
+                                        {
+                                            cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                                            cmd.Parameters.Add(new SqlParameter("@Master_ID", excel.Master_ID));
+                                            cmd.Parameters.Add(new SqlParameter("@Lavado", excel.Lavado));
+                                            cmd.Parameters.Add(new SqlParameter("@Medida_ID", excel.Medida_ID));
+                                            cmd.Parameters.Add(new SqlParameter("@Talla", excel.Talla));
+                                            cmd.Parameters.Add(new SqlParameter("@Spec", excel.Spec));
+                                            cmd.Parameters.Add(new SqlParameter("@Tolerancia_1", excel.Tolerancia_1));
+                                            cmd.Parameters.Add(new SqlParameter("@Tolerancia_2", excel.Tolerancia_2));
+                                            cmd.Parameters.Add(new SqlParameter("@Intruccion_1", excel.Intruccion_1 != null ? excel.Intruccion_1 : ""));
+                                            cmd.Parameters.Add(new SqlParameter("@Intruccion_2", excel.Intruccion_2 != null ? excel.Intruccion_2 : ""));
+                                            cmd.Parameters.Add(new SqlParameter("@Intruccion_3", excel.Intruccion_3 != null ? excel.Intruccion_3 : ""));
+                                            cmd.Parameters.Add(new SqlParameter("@Altura_Asiento", excel.Altura_Asiento));
+
+                                            await sql.OpenAsync();
+
+                                            using (var reader = await cmd.ExecuteReaderAsync())
+                                            {
+                                                while (await reader.ReadAsync())
+                                                {
+                                                    //response.Add(getListaHistoricoEstado(reader));
+                                                }
+                                            }
+
+                                        }
+
+                                    }
+
+
+                                }
+                            }
+                        }
+                    }
+
+                        /*application = new Application();
                     application.Workbooks.Open(ruta);
                     workbook = application.Workbooks.Item[1];
                     worksheet = workbook.ActiveSheet;
-                    ((Worksheet)worksheet.Application.ActiveWorkbook.Sheets[1]).Select();
+                    ((Worksheet)worksheet.Application.ActiveWorkbook.Sheets[1]).Select();*/
 
                     //Buscar donde se encuentran los campos de tolerancia
-                    for (int i = 15; i < 100; i++)
+                    /*for (int i = 15; i < 100; i++)
                     {
                         var cellvalue = (string)(worksheet.Cells[13, i] as Microsoft.Office.Interop.Excel.Range).Value;
                         if (cellvalue == "Tolerancia")
@@ -914,16 +1090,17 @@ namespace FinanzasAPI.Features.Repositories
 
                             }
                         }
-                    }
-                    workbook.Close();
-                    application.Quit();
+                    }*/
+                    
+                    /*workbook.Close();
+                    application.Quit();*/
                    
                 }
                 catch(Exception error)
                 {
-                    workbook.Close();
-                    application.Quit();
-                    return "no";
+                    /*workbook.Close();
+                    application.Quit();*/
+                    return "no: "+error.Message;
                 }
     
 
