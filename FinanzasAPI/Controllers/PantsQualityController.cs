@@ -142,6 +142,9 @@ namespace FinanzasAPI.Controllers
                             
                             //tomar lectura del archivo de excel
                             var resp = await _pantsQuality.GetOrdenesInicialdas(0, 1, fileName);
+                            var resp2 = await _pantsQuality.GetOrdenInicialda(resp[0].PRODMASTERREFID, resp[0].PRODMASTERID, resp[0].ITEMID,-1);
+
+
                             if (resp.Count > 0)
                             {
                                 var datos = await this.GetDatosExcel(fileName, resp[0].ITEMID);

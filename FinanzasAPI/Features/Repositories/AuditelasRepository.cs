@@ -19,7 +19,7 @@ namespace FinanzasAPI.Features.Repositories
         {
             _context = context;
             _connectionString = configuracion.GetConnectionString("MicrosoftDynamicsAX_PRO");
-            _connectionStringCubo = configuracion.GetConnectionString("IMDesarrollos");
+            _connectionStringCubo = configuracion.GetConnectionString("IMFinanzas");
         }
         public async Task<List<ObtenerRollosAuditarDTO>> GetRollosAuditar(string RollID, string ApVendRoll, string importacion, string tela, int page, int size)
         {
