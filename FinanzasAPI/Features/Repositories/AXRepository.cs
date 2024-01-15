@@ -24,7 +24,7 @@ namespace FinanzasAPI.Features.Repositories
         public AXRepository(AxContext context, IConfiguration configuracion)
         {
             _context = context;
-            _connectionStringCubo = configuracion.GetConnectionString("IMDesarrollos");
+            _connectionStringCubo = configuracion.GetConnectionString("IMFinanzas");
         }
 
         public string InsertDefectos(int id)

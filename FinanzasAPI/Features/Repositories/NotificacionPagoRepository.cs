@@ -27,7 +27,7 @@ namespace FinanzasAPI.Features.Repositories
         {
             _context = context;
             _connectionString = configuracion.GetConnectionString("MicrosoftDynamicsAX_PRO");
-            _connectionStringCubo = configuracion.GetConnectionString("IMDesarrollos");
+            _connectionStringCubo = configuracion.GetConnectionString("IMFinanzas");
 
         }
         public async Task<List<NotificacionPagoDTO>> getNotificacionPago(string numerolote, int enviar, string empresa, string correoCopia)
