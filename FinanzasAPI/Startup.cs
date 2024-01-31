@@ -43,6 +43,8 @@ namespace FinanzasAPI
             services.AddTransient<IAudiTelasRepository, AuditelasRepository>();
             services.AddTransient<IAX, AXRepository>();
             services.AddTransient<IFacturasProveedorRepository, FacturasProveedorRepository>();
+            services.AddTransient<IEnvioCorreoRepository, EnvioCorreoRepository>();
+            
 
             services.AddSwaggerGen(c =>
             {
