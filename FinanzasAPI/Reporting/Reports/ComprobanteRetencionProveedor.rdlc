@@ -325,7 +325,7 @@
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Retención ISR</Value>
+                                  <Value>=IIf( First(Fields!header02.Value, "ComprobanteRetencion") &gt;= 15 , "Retencion ISV","Retencion ISR")</Value>
                                   <Style>
                                     <FontSize>8pt</FontSize>
                                     <FontWeight>Bold</FontWeight>

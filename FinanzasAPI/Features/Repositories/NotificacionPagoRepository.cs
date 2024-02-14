@@ -359,9 +359,39 @@ namespace FinanzasAPI.Features.Repositories
                     if (pdf.Count() > 0)
                     {
                         Reporting_Services generar = new Reporting_Services();
-                        MemoryStream ms = new MemoryStream(generar.GenerateReport_ComprobanteRetencionProveedor(pdf));
-                        mailMessage.Attachments.Add(new Attachment(ms, "Comprobante_Retencion.pdf"));
-                        byte[] pdfData = ms.ToArray();
+
+                        var grupos = pdf.GroupBy(x => x.header02);
+
+                        var listacampos = grupos.Select(x => x.Key);
+                        foreach(var campo in listacampos)
+                        {
+                            var comp = new List<ComprobanteRetencionPDF_DTO>();
+
+                            pdf.ForEach(x => { 
+                                if(x.header02 == campo && campo != null)
+                                {
+                                    comp.Add(x);
+                                }
+                            });
+
+                            ComprobanteRetencionPDF_DTO tmp4 = new ComprobanteRetencionPDF_DTO();
+                            tmp4.proveedorCAI = "Totales";
+                            tmp4.importe = comp.Sum(x=> Convert.ToDecimal(x.importe)).ToString("0,0.00", CultureInfo.InvariantCulture);
+                            tmp4.retencionISR = comp.Sum(x => Convert.ToDecimal(x.retencionISR)).ToString("0,0.00", CultureInfo.InvariantCulture);
+                            comp.Add(tmp4);
+
+                            if (comp.Count() > 0 && comp[0].proveedorNum != null)
+                            {
+                                MemoryStream ms = new MemoryStream(generar.GenerateReport_ComprobanteRetencionProveedor(comp));
+                                mailMessage.Attachments.Add(new Attachment(ms, "Comprobante_Retencion " + comp.First().header02 + " .pdf"));
+                            }
+                            
+                        }
+                        
+                       
+
+
+                        /*byte[] pdfData = ms.ToArray();
                         DateTime date = DateTime.Now;
                         string path = @"\\AppServer\Intermoda\RETENCION AX\RETENCIONES " + date.Year + @"\" + mes(date.Month);
                         try
@@ -373,7 +403,7 @@ namespace FinanzasAPI.Features.Repositories
                         {
                             Directory.CreateDirectory(path);
                             File.WriteAllBytes(path + @"\" + empresa + "-" + pdf[0].comprobante.Substring(11, 8) + "-" + pdf[0].proveedorNum + ".pdf", pdfData);
-                        }
+                        }*/
 
                     }
 
@@ -392,7 +422,7 @@ namespace FinanzasAPI.Features.Repositories
                     smtpClient.Dispose();
                     data.ForEach(x =>
                     {
-                        sendHisttory(empresa, data[0].proveedorNum, data[0].correo, numerolote, x.NumeroFactura, x.fecha, true);
+                       // sendHisttory(empresa, data[0].proveedorNum, data[0].correo, numerolote, x.NumeroFactura, x.fecha, true);
 
                     });
                 }
