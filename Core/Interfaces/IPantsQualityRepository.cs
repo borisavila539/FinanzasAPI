@@ -13,14 +13,15 @@ namespace Core.Interfaces
         public Task<List<ItemTallasDTOS>> GetItemTallas(string itemid, string prodmasterrefid);
         public Task<List<usuariosDTOs>> GetUsuarios(string user, string pass);
         public Task<List<MaestroOrdenes>> GetPostedMaestroOrdenes(int id, int userid, int estado);
-        public Task<List<MedidasDTOs>> GetMedidas();
+        public Task<List<MedidasDTOs>> GetMedidas(int Tipo);
         public Task<List<MedidasInsertDTOs>> postMedidasCalidad( List<MedidasInsertDTOs> datos);
-        public Task<List<DatosMedidasDtos>> getDatosMedidas(string prodmasterid, string talla, int lavado);
+        public Task<List<DatosMedidasDtos>> getDatosMedidas(string prodmasterid, string talla, int lavado,int TipoMedida);
         public Task<List<ComentarioDTO>> postComentario(List<ComentarioDTO> comentario);
         public Task<List<ComentariosDTO>> getComentarios(int masterId);
         public Task<List<ModulosCalidadDTO>> GetModulosCalidad();
         public Task<List<HistoricoEstdoOrdenDTO>> GetHistoricoEstdoOrden(int masterId);
         public Task<string> getDatosExcel(string prodmasterid,string itemid);
         //public Task<string> postExcelCalidad(IFormCollection archivo);
+        public Task<List<TiposMedidaDTO>> getTipoMedidas();
     }
 }

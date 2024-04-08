@@ -48,10 +48,10 @@ namespace FinanzasAPI.Controllers
             return Ok(resp);
         }
 
-        [HttpGet("medidas")]
-        public async Task<ActionResult<IEnumerable<MedidasDTOs>>> GetMedidas()
+        [HttpGet("medidas/{Tipo}")]
+        public async Task<ActionResult<IEnumerable<MedidasDTOs>>> GetMedidas(int Tipo)
         {
-            var resp = await _pantsQuality.GetMedidas();
+            var resp = await _pantsQuality.GetMedidas(Tipo);
             return Ok(resp);
         }
 
@@ -62,10 +62,10 @@ namespace FinanzasAPI.Controllers
             return Ok(resp);
         }
 
-        [HttpGet("DatosMedida/{prodmasterid}/{talla}/{lavado}")]
-        public async Task<ActionResult<IEnumerable<DatosMedidasDtos>>> GetDatosMedidas(string prodmasterid, string talla, int lavado)
+        [HttpGet("DatosMedida/{prodmasterid}/{talla}/{lavado}/{TipoMedida}")]
+        public async Task<ActionResult<IEnumerable<DatosMedidasDtos>>> GetDatosMedidas(string prodmasterid, string talla, int lavado,int TipoMedida)
         {
-            var resp = await _pantsQuality.getDatosMedidas(prodmasterid, talla, lavado);
+            var resp = await _pantsQuality.getDatosMedidas(prodmasterid, talla, lavado,TipoMedida);
             return Ok(resp);
         }
         [HttpPost("medidasInsert")]
@@ -107,6 +107,12 @@ namespace FinanzasAPI.Controllers
         public Task<string> GetDatosExcel(string prodmasterid, string itemid)
         {
              var resp = _pantsQuality.getDatosExcel(prodmasterid,itemid);
+            return resp;
+        }
+        [HttpGet("TipoMedidas")]
+        public async Task<ActionResult<IEnumerable<TiposMedidaDTO>>> getTipoMedidas()
+        {
+            var resp = await _pantsQuality.getTipoMedidas();
             return resp;
         }
 
