@@ -304,7 +304,7 @@ namespace FinanzasAPI.Features.Repositories
             try
             {
                 string emailOrigen = "sistema@intermoda.com.hn";
-                string contrasena = "Intermod@2022#";
+                string contrasena = "1nT3rM0d@.Syt3ma1l";
 
                 MailMessage OMailMesage = new MailMessage(emailOrigen, correoDestino, asunto, textBody);
                 OMailMesage.IsBodyHtml = true;
