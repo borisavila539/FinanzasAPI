@@ -13,7 +13,7 @@ namespace FinanzasAPI
 {
     public class Startup
     {
-        readonly string CorsOrigins = "AllowAnyCorsPolicy";
+        readonly string CorsOrigins = "AllowAny";
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
