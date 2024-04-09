@@ -116,6 +116,20 @@ namespace FinanzasAPI.Controllers
             return resp;
         }
 
+        [HttpGet("Estilos/{filtro}")]
+        public async Task<ActionResult<IEnumerable<EstiloDTO>>> getEstilos(string filtro)
+        {
+            var resp = await _pantsQuality.getEstilos(filtro);
+            return resp;
+        }
+
+        [HttpGet("TallasEstilos/{estilo}")]
+        public async Task<ActionResult<IEnumerable<TallasEstiloDTO>>> getTallasEstilos(string estilo)
+        {
+            var resp = await _pantsQuality.getTallasEstilo(estilo);
+            return resp;
+        }
+
         [HttpPost("subirarchivo")]
         public async Task<List<ResponseDTO>> postExcelCalidad(IFormCollection archivo)
         {
@@ -145,15 +159,26 @@ namespace FinanzasAPI.Controllers
                             
                             await file.CopyToAsync(stream);
 
-                            
+                            string item = "";
                             //tomar lectura del archivo de excel
-                            var resp = await _pantsQuality.GetOrdenesInicialdas(0, 1, fileName);
-                            var resp2 = await _pantsQuality.GetOrdenInicialda(resp[0].PRODMASTERREFID, resp[0].PRODMASTERID, resp[0].ITEMID,-1);
-
-
-                            if (resp.Count > 0)
+                            if (fileName.StartsWith("OP-"))
                             {
-                                var datos = await this.GetDatosExcel(fileName, resp[0].ITEMID);
+                                var resp = await _pantsQuality.GetOrdenesInicialdas(0, 1, fileName);
+                                var resp2 = await _pantsQuality.GetOrdenInicialda(resp[0].PRODMASTERREFID, resp[0].PRODMASTERID, resp[0].ITEMID,-1);
+                                item = resp[0].ITEMID;
+                            }
+                            else
+                            {
+                                var resp = await _pantsQuality.getEstilos(fileName);
+                                var resp2 = await _pantsQuality.GetOrdenInicialda(resp[0].Estilo.Trim(), resp[0].Estilo.Trim(), resp[0].Estilo.Trim(), -1);
+                                item = resp[0].Estilo;
+                            }
+                            
+
+
+                            if (item != "")
+                            {
+                                var datos = await this.GetDatosExcel(fileName, item);
                                 if (datos.Substring(0,2) == "no")
                                 {
                                     response.response = fileName + ": Error al leer el archivo - " + datos.Substring(3,100);

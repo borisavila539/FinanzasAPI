@@ -23,5 +23,7 @@ namespace Core.Interfaces
         public Task<string> getDatosExcel(string prodmasterid,string itemid);
         //public Task<string> postExcelCalidad(IFormCollection archivo);
         public Task<List<TiposMedidaDTO>> getTipoMedidas();
+        public Task<List<EstiloDTO>> getEstilos(string filtro);
+        public Task<List<TallasEstiloDTO>> getTallasEstilo(string estilo);
     }
 }

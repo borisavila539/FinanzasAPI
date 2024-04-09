@@ -3,16 +3,13 @@
 using Core.DTOs;
 using Core.Interfaces;
 using Infraestructure.Data;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Office.Interop.Excel;
 using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 
@@ -22,6 +19,7 @@ namespace FinanzasAPI.Features.Repositories
     {
         private readonly string _connectionString;
         private readonly string _connectionStringCubo;
+        private readonly string _connectionStringPLM;
 
 
         private readonly AxContext _context;
@@ -34,6 +32,7 @@ namespace FinanzasAPI.Features.Repositories
             _context = context;
             _connectionString = configuracion.GetConnectionString("MicrosoftDynamicsAX_PRO");
             _connectionStringCubo = configuracion.GetConnectionString("IMDesarrollos");
+            _connectionStringPLM = configuracion.GetConnectionString("PRUEBA_LO");
 
         }
         public async Task<List<OrdenesInicialdasDTO>> GetOrdenesInicialdas(int page, int size, string filtro)
@@ -561,7 +560,15 @@ namespace FinanzasAPI.Features.Repositories
         public async  Task<string> getDatosExcel(string prodmasterid,string itemid)
         {
 
-            var orden = prodmasterid.Substring(0, 11);
+            var orden = "";
+            if (prodmasterid.StartsWith("OP-")) 
+            {
+               orden = prodmasterid.Substring(0, 11);
+            }
+            else
+            {
+                orden = prodmasterid;
+            }
             string ruta = @"\\10.100.0.41\Auditoria\" + orden + ".xlsx";
 
             var Tipo = await getTipoMedidas();
@@ -673,7 +680,22 @@ namespace FinanzasAPI.Features.Repositories
                                         excel.Tolerancia_1 = (string)worksheet.Cells[fila, tolerancia].Value;
                                         excel.Tolerancia_2 = (string)worksheet.Cells[fila, tolerancia + 1].Value;
 
-                                        var tallas = await GetItemTallas(itemid, orden);
+                                        List<ItemTallasDTOS> tallas = new List<ItemTallasDTOS>();
+                                        if (prodmasterid.StartsWith("OP-"))
+                                        {
+                                            tallas = await GetItemTallas(itemid, orden);
+                                        }
+                                        else
+                                        {
+                                            var tallaEstilos = await getTallasEstilo(orden);
+                                            tallaEstilos.ForEach(element =>
+                                            {
+                                                ItemTallasDTOS tmp = new ItemTallasDTOS();
+                                                tmp.SIZEID = element.Tallas;
+                                                tallas.Add(tmp);
+                                            });
+                                        }
+                                        
                                         int columnaNueva = columna;
                                         foreach (var talla in tallas)
                                         {
@@ -856,7 +878,21 @@ namespace FinanzasAPI.Features.Repositories
                                     excel.Tolerancia_1 = (string)worksheet.Cells[fila, tolerancia].Value;
                                     excel.Tolerancia_2 = (string)worksheet.Cells[fila, tolerancia + 1].Value;
 
-                                    var tallas = await GetItemTallas(itemid, orden);
+                                    List<ItemTallasDTOS> tallas = new List<ItemTallasDTOS>();
+                                    if (prodmasterid.StartsWith("OP-"))
+                                    {
+                                        tallas = await GetItemTallas(itemid, orden);
+                                    }
+                                    else
+                                    {
+                                        var tallaEstilos = await getTallasEstilo(orden);
+                                        tallaEstilos.ForEach(element =>
+                                        {
+                                            ItemTallasDTOS tmp = new ItemTallasDTOS();
+                                            tmp.SIZEID = element.Tallas;
+                                            tallas.Add(tmp);
+                                        });
+                                    }
                                     int columnaNueva = 1;
                                     foreach (var talla in tallas)
                                     {
@@ -971,6 +1007,71 @@ namespace FinanzasAPI.Features.Repositories
                 Nombre = Convert.ToString(reader["Nombre"].ToString()),
                 Hoja = Convert.ToInt32(reader["Hoja"].ToString()),
 
+
+            };
+        }
+
+        public async Task<List<EstiloDTO>> getEstilos(string filtro)
+        {
+            var response = new List<EstiloDTO>();
+            using (SqlConnection sql = new SqlConnection(_connectionStringPLM))
+            {
+                using (SqlCommand cmd = new SqlCommand("[IM_GETSTYLE_MEASUREAPP]", sql))
+                {
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(new SqlParameter("@ESTILO", filtro));
+                    await sql.OpenAsync();
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            response.Add(getEstilo(reader));
+                        }
+                    }
+                }
+            }
+            return response;
+        }
+        public EstiloDTO getEstilo(SqlDataReader reader)
+        {
+            return new EstiloDTO()
+            {
+
+                Estilo = Convert.ToString(reader["Estilo"].ToString())
+
+            };
+        }
+
+        public async Task<List<TallasEstiloDTO>> getTallasEstilo(string estilo)
+        {
+            var response = new List<TallasEstiloDTO>();
+            using (SqlConnection sql = new SqlConnection(_connectionStringPLM))
+            {
+                using (SqlCommand cmd = new SqlCommand("[IM_GETSIZE_MEASUREAPP]", sql))
+                {
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(new SqlParameter("@ESTILO", estilo));
+                    await sql.OpenAsync();
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            response.Add(getTallaEstilo(reader));
+                        }
+                    }
+                }
+            }
+            return response;
+        }
+
+        public TallasEstiloDTO getTallaEstilo(SqlDataReader reader)
+        {
+            return new TallasEstiloDTO()
+            {
+
+                Estilo = Convert.ToString(reader["Estilo"].ToString()),
+                Set = Convert.ToString(reader["Set"].ToString()),
+                Tallas = Convert.ToString(reader["Tallas"].ToString()),
 
             };
         }
