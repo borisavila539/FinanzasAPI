@@ -37,10 +37,11 @@ namespace FinanzasAPI.Features.Repositories
             correosRecibido = correosRecibido.Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().ToList();
             correosCopia = correosCopia.Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().ToList();
 
-            string nombreMes = mes.nombreMes(fecha.Month), responseFromSend = "",
+            string /*nombreMes = mes.nombreMes(fecha.Month),*/ responseFromSend = "",
                    response = "", regex = @"^[^@\s]+@[^@\s]+\.(com|net|org|gov|hn|gt)$",
-                   retencionesISRPath = $@"\\10.100.1.35\\Modinter Guatemala\\{fecha.Year}\\RETENCIONES ISR\\{nombreMes}",
-                   retencionesIVAPath = $@"\\10.100.1.35\\Modinter Guatemala\\{fecha.Year}\\RETENCIONES IVA\\{nombreMes}";
+                   retencionesPath = $@"\\10.100.1.35\\Modinter Guatemala\\";
+            /*retencionesISRPath = $@"\\10.100.1.35\\Modinter Guatemala\\{fecha.Year}\\RETENCIONES ISR\\{nombreMes}",
+            retencionesIVAPath = $@"\\10.100.1.35\\Modinter Guatemala\\{fecha.Year}\\RETENCIONES IVA\\{nombreMes}";*/
 
             int cantidadCorreosEnviados = 0;
 
@@ -86,12 +87,24 @@ namespace FinanzasAPI.Features.Repositories
                     if (esCorreo)
                     {
                         List<string> facturas = new();
+                        List<DateTime> fechasFacturas = new();
 
                         facturas = facturasDelProveedor(facturasProveedor, proveedor);
+                        List<Factura> facturasConFechas = facturasPorFecha(facturasProveedor);
 
                         foreach (string factura in facturas)
                         {
+                            if(!fechasFacturas.Contains(facturasConFechas.Find(x => x.NumeroDeFactura == factura).FechaRetencion))
+                            {
+                                fechasFacturas.Add(facturasConFechas.Find(x => x.NumeroDeFactura == factura).FechaRetencion);
+                            }
+                            
                             string nombreArchivo = proveedor + "-" + factura;
+                            int anio = (facturasConFechas.Find(x => x.NumeroDeFactura == factura).FechaRetencion).Year;
+                            string nombreMes = mes.nombreMes((facturasConFechas.Find(x => x.NumeroDeFactura == factura).FechaRetencion).Month);
+
+                            string retencionesISRPath = retencionesPath + $@"{anio}\RETENCIONES ISR\\{nombreMes}";
+                            string retencionesIVAPath = retencionesPath + $@"{anio}\RETENCIONES IVA\\{nombreMes}";
 
                             byte[] retencionISR = null, retencionIVA = null;
                             string pdfFilePathISR = Path.Combine(retencionesISRPath, nombreArchivo + ".pdf"),
@@ -121,8 +134,8 @@ namespace FinanzasAPI.Features.Repositories
                                 archivos.Add(archivo);
                             }
                         }
-
-                        int cantidadRetencionesAdjuntar = cantidadRetencionesProveedor * facturas.Count;
+                        int cantidadFacturasProveedor = facturasConFechas.FindAll(x => x.CuentaDelProveedor == proveedor).Count();
+                        int cantidadRetencionesAdjuntar = cantidadRetencionesProveedor * cantidadFacturasProveedor;
 
                         if (archivos.Count < cantidadRetencionesAdjuntar)
                         {
@@ -136,7 +149,7 @@ namespace FinanzasAPI.Features.Repositories
                         }
                         else
                         {
-                            responseFromSend = composeEmail(fecha, facturas, facturaProveedor.Email, correosRecibido, archivos, correosCopia);
+                            responseFromSend = composeEmail(fechasFacturas, facturas, facturaProveedor.Email, correosRecibido, archivos, correosCopia);
                             cantidadCorreosEnviados++;
 
                             if (responseFromSend != "")
@@ -185,7 +198,7 @@ namespace FinanzasAPI.Features.Repositories
                     {
                         enviado = false;
                     }
-                    int responseInsert = GuardarHistorico(factura.CuentaDelProveedor, factura.Email, factura.NumeroDeFactura, factura.LoteDeDiario, "imgt", enviado).Result;
+                    int responseInsert = GuardarHistorico(factura.CuentaDelProveedor, factura.Email, factura.NumeroDeFactura, factura.LoteDeDiario, "imgt", enviado, factura.FechaRetencion).Result;
 
                     if (responseInsert <= 0)
                     {
@@ -209,10 +222,19 @@ namespace FinanzasAPI.Features.Repositories
             return response;
         }
 
-        public string composeEmail(DateTime fecha, List<string> facturas, string correo, List<string> correosRecibido, List<Archivos> archivos, List<string> copiasCorreo)
+        public string composeEmail(List<DateTime> fechas, List<string> facturas, string correo, List<string> correosRecibido, List<Archivos> archivos, List<string> copiasCorreo)
         {
             CultureInfo culture = new CultureInfo("es-ES", false);
-            string fechaWithFormat = fecha.ToString(culture.DateTimeFormat.LongDatePattern, culture);
+            string fechaWithFormat = "";
+
+            if (fechas.Count > 1)
+            {
+                fechaWithFormat = fechas.Min().ToString(culture.DateTimeFormat.LongDatePattern, culture) + " hasta " + fechas.Max().ToString(culture.DateTimeFormat.LongDatePattern, culture);
+            }
+            else
+            {
+                fechaWithFormat = fechas[0].ToString(culture.DateTimeFormat.LongDatePattern, culture);
+            }
 
             string response = "";
             string asunto = "Retenciones";
@@ -383,6 +405,31 @@ namespace FinanzasAPI.Features.Repositories
             return facturas;
         }
 
+        public List<Factura> facturasPorFecha(List<FacturasProveedor> facturasProveedor)
+        {
+            List<Factura> facturas = new();
+
+            foreach (FacturasProveedor fact in facturasProveedor)
+            {
+                Factura factura = new()
+                {
+                    CuentaDelProveedor = fact.CuentaDelProveedor,
+                    NumeroDeFactura = removeTextFromHyphen(fact.NumeroDeFactura),
+                    CantidadRetenciones = fact.CantidadRetenciones,
+                    FechaRetencion = fact.FechaRetencion
+                };
+
+                if (!facturas.Exists(x => x.NumeroDeFactura == factura.NumeroDeFactura))
+                {
+                    facturas.Add(factura);
+                }
+            }
+
+            facturas = facturas.Distinct().ToList();
+
+            return facturas;
+        }
+
         public string removeTextFromHyphen(string factura)
         {
             bool tieneGuion = factura.IndexOf('-') > 0;
@@ -397,7 +444,7 @@ namespace FinanzasAPI.Features.Repositories
             return modifiedString;
         }
 
-        public async Task<int> GuardarHistorico(string cuenta, string email, string numFactura, string lote,string dataAreaId, bool estado)
+        public async Task<int> GuardarHistorico(string cuenta, string email, string numFactura, string lote,string dataAreaId, bool estado, DateTime fechaRetencion)
         {
             int response = 0;
             try
@@ -414,6 +461,7 @@ namespace FinanzasAPI.Features.Repositories
                         cmd.Parameters.Add(new SqlParameter("@fecha", DateTime.Now));
                         cmd.Parameters.Add(new SqlParameter("@dataAreaId", dataAreaId));
                         cmd.Parameters.Add(new SqlParameter("@estado", estado));
+                        cmd.Parameters.Add(new SqlParameter("@fechaRetencion", fechaRetencion));
                         await sql.OpenAsync();
 
                         using (var reader = await cmd.ExecuteReaderAsync())
@@ -447,7 +495,8 @@ namespace FinanzasAPI.Features.Repositories
                 LoteDeDiario = reader["LoteDeDiario"].ToString(),
                 Asiento = reader["Asiento"].ToString(),
                 Factura = reader["Factura"].ToString(),
-                CantidadRetenciones = (int)reader["CantidadRetenciones"]
+                CantidadRetenciones = (int)reader["CantidadRetenciones"],
+                FechaRetencion = (DateTime)reader["FechaRetencion"]
             };
         }
         public void descargarImagen(byte[] image)
