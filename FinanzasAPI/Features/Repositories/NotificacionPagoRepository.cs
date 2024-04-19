@@ -269,7 +269,7 @@ namespace FinanzasAPI.Features.Repositories
                 {
                     string correoDestino = data[0].correo;//cambiar a correo destino despues
                     string correoOrigen = "sistema@intermoda.com.hn";
-                    string contrasena = "Intermod@2022#";
+                    string contrasena = "1nT3rM0d@.Syt3ma1l";
                     string asunto = "Notificacion de pago";
                     if (empresa == "IMGT")
                     {
