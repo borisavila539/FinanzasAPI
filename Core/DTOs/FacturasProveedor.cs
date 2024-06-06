@@ -18,5 +18,6 @@ namespace Core.DTOs
         public string Asiento { get;set; }
         public string Factura { get;set; }        
         public int CantidadRetenciones { get;set; }
+        public DateTime FechaRetencion { get; set; }
     }
 }
