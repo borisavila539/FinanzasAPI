@@ -31,8 +31,8 @@ namespace FinanzasAPI.Features.Repositories
         {
             _context = context;
             _connectionString = configuracion.GetConnectionString("MicrosoftDynamicsAX_PRO");
-            _connectionStringCubo = configuracion.GetConnectionString("IMDesarrollos");
-            _connectionStringPLM = configuracion.GetConnectionString("PRUEBA_LO");
+            _connectionStringCubo = configuracion.GetConnectionString("IMFinanzas");
+            _connectionStringPLM = configuracion.GetConnectionString("PLM_PRO");
 
         }
         public async Task<List<OrdenesInicialdasDTO>> GetOrdenesInicialdas(int page, int size, string filtro)
