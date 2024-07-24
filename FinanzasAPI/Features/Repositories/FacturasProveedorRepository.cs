@@ -15,6 +15,7 @@ using Core.Utilities;
 using System.Net.Mime;
 using System.Net.Http;
 using System.Globalization;
+using WMS_API.Features.Utilities;
 
 namespace FinanzasAPI.Features.Repositories
 {
@@ -325,8 +326,8 @@ namespace FinanzasAPI.Features.Repositories
 
             try
             {
-                string emailOrigen = "sistema@intermoda.com.hn";
-                string contrasena = "1nT3rM0d@.Syt3ma1l";
+                string emailOrigen =VariablesGlobales.Correo;
+                string contrasena = VariablesGlobales.Correo_Password;
 
                 MailMessage OMailMesage = new MailMessage(emailOrigen, correoDestino, asunto, textBody);
                 OMailMesage.IsBodyHtml = true;

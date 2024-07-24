@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Threading.Tasks;
+using WMS_API.Features.Utilities;
 
 namespace FinanzasAPI.Features.Repositories
 {
@@ -14,8 +15,8 @@ namespace FinanzasAPI.Features.Repositories
     {
         public Boolean postEnvioCorreo(EmailDTO emailDTO)
         {
-            string emailOrigen = "sistema@intermoda.com.hn";
-            string contrasena = "1nT3rM0d@.Syt3ma1l";
+            string emailOrigen =VariablesGlobales.Correo;
+            string contrasena = VariablesGlobales.Correo_Password;
 
             
             MailMessage OMailMesage = new MailMessage(emailOrigen, emailDTO.To, emailDTO.Asunto, emailDTO.Html);

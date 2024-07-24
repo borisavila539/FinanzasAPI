@@ -13,6 +13,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Threading.Tasks;
+using WMS_API.Features.Utilities;
 
 namespace FinanzasAPI.Features.Repositories
 {
@@ -268,8 +269,8 @@ namespace FinanzasAPI.Features.Repositories
                 if (data[0].correo != null && data[0].correo != "" && FueEnviado  == "NO")
                 {
                     string correoDestino = data[0].correo;//cambiar a correo destino despues
-                    string correoOrigen = "sistema@intermoda.com.hn";
-                    string contrasena = "1nT3rM0d@.Syt3ma1l";
+                    string correoOrigen =VariablesGlobales.Correo;
+                    string contrasena = VariablesGlobales.Correo_Password;
                     string asunto = "Notificacion de pago";
                     if (empresa == "IMGT")
                     {
