@@ -5,6 +5,8 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Net.Sockets;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace FinanzasAPI.Features.Repositories
@@ -15,6 +17,10 @@ namespace FinanzasAPI.Features.Repositories
         private readonly string _connectionStringCubo;
         private readonly AxContext _context;
 
+        public AuditelasRepository()
+        {
+            
+        }
         public AuditelasRepository(AxContext context, IConfiguration configuracion)
         {
             _context = context;
@@ -537,11 +543,122 @@ namespace FinanzasAPI.Features.Repositories
             catch (Exception err)
             {
                 return null;
+            }         
+            
+            
+        }
+
+        public async Task<IM_ObtenerDatosRollo> Get_ObtenerDatosRollo(string Rollo)
+        {
+            var response = new IM_ObtenerDatosRollo();
+            using (SqlConnection sql = new SqlConnection(_connectionStringCubo))
+            {
+                using (SqlCommand cmd = new SqlCommand("[IM_ObtenerDatosRollo]", sql))
+                {
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(new SqlParameter("@Rollo", Rollo));
+
+
+                    await sql.OpenAsync();
+
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            response = Get_ObtenerDatosRolloLine(reader);
+                        }
+                    }
+                }
             }
 
-            
-            
-            
+            return response;
+        }
+        public IM_ObtenerDatosRollo Get_ObtenerDatosRolloLine(SqlDataReader reader)
+        {
+            return new IM_ObtenerDatosRollo()
+            {
+                Ancho_1 = Convert.ToDecimal(reader["Ancho_1"].ToString()),
+                Ancho_2 = Convert.ToDecimal(reader["Ancho_2"].ToString()),
+                Ancho_3 = Convert.ToDecimal(reader["Ancho_3"].ToString()),
+                Yardas_Proveedor = Convert.ToDecimal(reader["Yardas_Proveedor"].ToString()),
+                Yardas_Reales = Convert.ToDecimal(reader["Yardas_Reales"].ToString())
+            };
+        }
+
+        public async Task<string> GetimprimirEtiquetaRollo(string Rollo)
+        {
+            var data = new IM_Auditela_Etiqueta_Rollo();
+            using (SqlConnection sql = new SqlConnection(_connectionStringCubo))
+            {
+                using (SqlCommand cmd = new SqlCommand("[IM_Auditela_Etiqueta_Rollo]", sql))
+                {
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(new SqlParameter("@Rollo", Rollo));
+
+
+                    await sql.OpenAsync();
+
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                           data = GetimprimirEtiquetaRolloLines(reader);
+                        }
+                    }
+                }
+            }
+            string etiqueta = "";
+
+            etiqueta += "^XA^CF0,22^BY3,2,100";
+            etiqueta += $"^FO200,50^BC^FD{data.INVENTSERIALID}^FS";
+            etiqueta += $"^FO50,220^FDProveedor: {data.APVENDROLL}^FS";
+            etiqueta += $"^FO500,220^FDCantidad: {Math.Round(data.AVAILPHYSICAL,2)} {(data.ITEMID.Substring(0, 2) == "45" ? "lb" : "yd")}^FS";
+            etiqueta += $"^FO50,250^FDTela: {data.ITEMID}^FS";
+            etiqueta += $"^FO500,250^FDColor: {data.COLOR}^FS";
+            etiqueta += $"^FO50,280^FDLote: {data.INVENTBATCHID}^FS";
+            etiqueta += $"^FO500,280^FDConfiguracion: {data.CONFIGID}^FS";
+            etiqueta += $"^FO50,310^FDAuditor: {data.Auditor}^FS";
+            etiqueta += $"^FO500,310^FDFecha: {DateTime.Now.ToString("dd/MM/yyyy")}^FS";
+            etiqueta += $"^FO50,340^FDPPM2: {Math.Round(data.APPMts,2)}^FS^PQ2^XZ";
+
+            try
+            {
+                using (TcpClient client = new TcpClient("10.1.1.176", 9100))
+                {
+                    using (NetworkStream stream = client.GetStream())
+                    {
+                        byte[] bytes = Encoding.ASCII.GetBytes(etiqueta);
+                        stream.Write(bytes, 0, bytes.Length);
+
+                    }
+
+                }
+                return "OK";
+            }
+            catch (Exception err)
+            {
+                return err.ToString();
+            }
+
+
+            return "OK";
+        }
+        public IM_Auditela_Etiqueta_Rollo GetimprimirEtiquetaRolloLines(SqlDataReader reader)
+        {
+            return new IM_Auditela_Etiqueta_Rollo()
+            {
+                INVENTSERIALID = reader["INVENTSERIALID"].ToString(),
+                APVENDROLL = reader["APVENDROLL"].ToString(),
+                AVAILPHYSICAL = Convert.ToDecimal(reader["AVAILPHYSICAL"].ToString()),
+                ITEMID = reader["ITEMID"].ToString(),
+                COLOR = reader["COLOR"].ToString(),
+                INVENTBATCHID = reader["INVENTBATCHID"].ToString(),
+                CONFIGID = reader["CONFIGID"].ToString(),
+                Auditor = reader["Auditor"].ToString(),
+                APPMts = Convert.ToDecimal(reader["APPMts"].ToString())
+
+
+            };
         }
     }
 

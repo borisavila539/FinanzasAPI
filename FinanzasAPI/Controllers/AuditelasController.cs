@@ -19,7 +19,7 @@ namespace FinanzasAPI.Controllers
             _aX = aX;
         }
         [HttpGet("EnvioAX/{id}")]
-        public string GetEnvioAX(int id)
+        public Task<string> GetEnvioAX(int id)
         {
             var resp = _aX.InsertDefectos(id);
 
@@ -103,6 +103,19 @@ namespace FinanzasAPI.Controllers
             return resp;
         }
 
+        [HttpGet("ObtenerDatosRollo/{rollo}")]
+        public async Task<ActionResult<IM_ObtenerDatosRollo>> getObtenerDatosRollo(string rollo)
+        {
+            var resp = await _audiTelasRepository.Get_ObtenerDatosRollo(rollo);
+            return resp;
+        }
+
+        [HttpGet("ImprimirEtiqueta/{rollo}")]
+        public async Task<ActionResult<string>> GetimprimirEtiquetaRollo(string rollo)
+        {
+            var resp = await _audiTelasRepository.GetimprimirEtiquetaRollo(rollo);
+            return resp;
+        }
 
 
     }

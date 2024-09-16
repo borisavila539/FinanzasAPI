@@ -18,6 +18,8 @@ namespace Core.Interfaces
         public Task<List<AnchoRolloDTO>> setAnchoRollo(string Rollid, decimal Width);
         public Task<List<RollosImporteLoteDTO>> getRollosImporteLote(string Importacion,string Lote, string tela);
         public Task<List<PruebaCalidadLoteDTO>> postPruebaCalidadLote(List<PruebaCalidadLoteDTO> datos);
+        public Task<IM_ObtenerDatosRollo> Get_ObtenerDatosRollo(string Rollo);
+        public Task<string> GetimprimirEtiquetaRollo(string Rollo);
 
     }
 }

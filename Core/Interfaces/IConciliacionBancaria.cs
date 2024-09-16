@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace Core.Interfaces
 {
-    public interface IAX
+    public interface IConciliacionBancaria
     {
-        public Task<string> InsertDefectos(int id);
+        public Task<string> CreatereConciliacionFolders(string path, string date, string dataAreaId);
     }
 }

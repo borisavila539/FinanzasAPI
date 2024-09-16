@@ -31,5 +31,7 @@ namespace Core.DTOs
         public string LEVEL4 { get; set; }
         [XmlElement]
         public string OBSERVACION { get; set; }
+        [XmlElement]
+        public string YARDASREALES { get; set; }
     }
 }

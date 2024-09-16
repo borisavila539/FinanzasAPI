@@ -27,15 +27,18 @@ namespace FinanzasAPI.Features.Repositories
             _connectionStringCubo = configuracion.GetConnectionString("IMFinanzas");
         }
 
-        public string InsertDefectos(int id)
+        public async Task<string> InsertDefectos(int id)
         {
             object obj = new object();
             DEFECTOSHEADER HEADER = new DEFECTOSHEADER();
             List<DEFECTOSLINE> LIST = new List<DEFECTOSLINE>();
             List<ObtenerDatosDefectosDTO> detalle = GetDatosDefectos(id);
             List<ObtenerDetalleRolloDTO> encabezado = getObtenerDetalleRollo(id);
-            
+            var largo = await getDatosRollo( encabezado[0].Id_Pieza, encabezado[0].Numero_Rollo_Proveedor);
 
+
+
+           
             detalle.ForEach(x =>
             {
                 DEFECTOSLINE line = new DEFECTOSLINE();
@@ -47,6 +50,7 @@ namespace FinanzasAPI.Features.Repositories
                 line.LEVEL3 = x.Nivel_3.ToString();
                 line.LEVEL4 = x.Nivel_4.ToString();
                 line.OBSERVACION = encabezado[0].Observaciones;
+                line.YARDASREALES = (largo[0].Yardas_Reales*Convert.ToDecimal(1.09361)).ToString();
                 LIST.Add(line);
 
             });
@@ -68,12 +72,7 @@ namespace FinanzasAPI.Features.Repositories
             catch (Exception ex)
             {
                 return null;
-            }
-
-
-
-
-            
+            }          
 
         }
 
@@ -170,7 +169,47 @@ namespace FinanzasAPI.Features.Repositories
             var endpointAddr = new EndpointAddress(uri, addrHdrs); //, epid, addrHdrs);
             return endpointAddr;
         }
-        
+        public async Task<List<InsertarAnchoYardasDTO>> getDatosRollo(string Id_Pieza, string Numero_Rollo_Proveedor)
+        {
+            var response = new List<InsertarAnchoYardasDTO>();
+
+            using (SqlConnection sql = new SqlConnection(_connectionStringCubo))
+            {
+                using (SqlCommand cmd = new SqlCommand("[IM_ObtenerDetalleRolloYardas]", sql))
+                {
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(new SqlParameter("@Numero_Rollo_Proveedor", Numero_Rollo_Proveedor));
+                    cmd.Parameters.Add(new SqlParameter("@Id_Pieza", Id_Pieza));
+
+
+                    await sql.OpenAsync();
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            response.Add(getDetalleRolloYardas(reader));
+                        }
+                    }
+                }
+                return response;
+            }
+        }
+
+        public InsertarAnchoYardasDTO getDetalleRolloYardas(SqlDataReader reader)
+        {
+            return new InsertarAnchoYardasDTO()
+            {
+                Id_Rollo = Convert.ToInt32(reader["id"].ToString()),
+                Ancho_1 = Convert.ToDecimal(reader["Ancho_1"].ToString()),
+                Ancho_2 = Convert.ToDecimal(reader["Ancho_2"].ToString()),
+                Ancho_3 = Convert.ToDecimal(reader["Ancho_3"].ToString()),
+                Yardas_Reales = Convert.ToDecimal(reader["Yardas_Reales"].ToString()),
+                Yardas_Proveedor = Convert.ToDecimal(reader["Yardas_Proveedor"].ToString()),
+                Diferencia_Yardas = Convert.ToDecimal(reader["Diferencia_Yardas"].ToString()),
+                Observaciones = reader["Observaciones"].ToString()
+            };
+        }
+
     }
     public static class SerializationService
     {
@@ -196,4 +235,5 @@ namespace FinanzasAPI.Features.Repositories
             return type;
         }
     }
+
 }
