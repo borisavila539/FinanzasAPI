@@ -611,27 +611,27 @@ namespace FinanzasAPI.Features.Repositories
 
             etiqueta += "^XA^CF0,22^BY3,2,100";
             etiqueta += $"^FO200,50^BC^FD{data.INVENTSERIALID}^FS";
-            etiqueta += $"^FO50,220^FDProveedor: {data.APVENDROLL}^FS";
+            etiqueta += $"^FO50,190^FDProveedor: {data.Proveedor}^FS";
+            etiqueta += $"^FO50,220^FDNo. Rollo Proveedor: {data.APVENDROLL}^FS";
             etiqueta += $"^FO500,220^FDCantidad: {Math.Round(data.AVAILPHYSICAL,2)} {(data.ITEMID.Substring(0, 2) == "45" ? "lb" : "yd")}^FS";
             etiqueta += $"^FO50,250^FDTela: {data.ITEMID}^FS";
             etiqueta += $"^FO500,250^FDColor: {data.COLOR}^FS";
             etiqueta += $"^FO50,280^FDLote: {data.INVENTBATCHID}^FS";
-            etiqueta += $"^FO500,280^FDConfiguracion: {data.CONFIGID}^FS";
+            etiqueta += $"^FO500,280^FDTela: {data.Tela}^FS";
             etiqueta += $"^FO50,310^FDAuditor: {data.Auditor}^FS";
             etiqueta += $"^FO500,310^FDFecha: {DateTime.Now.ToString("dd/MM/yyyy")}^FS";
-            etiqueta += $"^FO50,340^FDPPM2: {Math.Round(data.APPMts,2)}^FS^PQ2^XZ";
+            etiqueta += $"^FO50,340^FDPPM2: {Math.Round(data.APPMts, 2)}^FS";
+            etiqueta+= $"^FO50,370^FDComentario: {data.Comentario}^FS^PQ2^XZ";
 
             try
             {
-                using (TcpClient client = new TcpClient("10.1.1.176", 9100))
+                using (TcpClient client = new TcpClient("10.1.1.176", 9100))//176
                 {
                     using (NetworkStream stream = client.GetStream())
                     {
                         byte[] bytes = Encoding.ASCII.GetBytes(etiqueta);
                         stream.Write(bytes, 0, bytes.Length);
-
                     }
-
                 }
                 return "OK";
             }
@@ -639,8 +639,6 @@ namespace FinanzasAPI.Features.Repositories
             {
                 return err.ToString();
             }
-
-
             return "OK";
         }
         public IM_Auditela_Etiqueta_Rollo GetimprimirEtiquetaRolloLines(SqlDataReader reader)
@@ -655,8 +653,10 @@ namespace FinanzasAPI.Features.Repositories
                 INVENTBATCHID = reader["INVENTBATCHID"].ToString(),
                 CONFIGID = reader["CONFIGID"].ToString(),
                 Auditor = reader["Auditor"].ToString(),
-                APPMts = Convert.ToDecimal(reader["APPMts"].ToString())
-
+                APPMts = Convert.ToDecimal(reader["APPMts"].ToString()),
+                Comentario = reader["Comentario"].ToString(),
+                Proveedor = reader["Proveedor"].ToString(),
+                Tela = reader["Tela"].ToString()
 
             };
         }

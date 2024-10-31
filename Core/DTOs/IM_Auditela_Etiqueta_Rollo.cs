@@ -17,5 +17,9 @@ namespace Core.DTOs
         public string CONFIGID { get; set; }
         public string Auditor { get; set; }
         public decimal APPMts { get; set; }
+        public string Comentario { get; set; }
+        public string Proveedor { get; set; }
+        public string Tela { get; set; }
+
     }
 }
