@@ -15,17 +15,16 @@ using Core.Utilities;
 using System.Net.Mime;
 using System.Net.Http;
 using System.Globalization;
-using WMS_API.Features.Utilities;
 
 namespace FinanzasAPI.Features.Repositories
 {
     public class FacturasProveedorRepository : IFacturasProveedorRepository
     {
-        private readonly string _connectionStringCubo;
+        private readonly string _connectionStringFinanzas;
 
         public FacturasProveedorRepository(IConfiguration configuracion)
         {
-            _connectionStringCubo = configuracion.GetConnectionString("IMFinanzas");
+            _connectionStringFinanzas = configuracion.GetConnectionString("IMFinanzas");
         }
 
         public async Task<string> enviarRetencion(string dataAreaId, string fechaReporte, string correos, string copiaCorreos)
@@ -56,7 +55,7 @@ namespace FinanzasAPI.Features.Repositories
 
             try
             {
-                using (SqlConnection sql = new SqlConnection(_connectionStringCubo))
+                using (SqlConnection sql = new SqlConnection(_connectionStringFinanzas))
                 {
                     using (SqlCommand cmd = new SqlCommand("[Retenciones].[Get_FacturasConRetencionesPendientes]", sql))
                     {
@@ -83,7 +82,6 @@ namespace FinanzasAPI.Features.Repositories
                     Envios envio = new();
                     FacturasProveedor facturaProveedor = facturasProveedor.Find(x => x.CuentaDelProveedor == proveedor);
                     bool esCorreo = Regex.IsMatch(facturaProveedor.Email, regex, RegexOptions.IgnoreCase);
-                    int cantidadRetencionesProveedor = facturaProveedor.CantidadRetenciones;
 
                     if (esCorreo)
                     {
@@ -93,13 +91,17 @@ namespace FinanzasAPI.Features.Repositories
                         facturas = facturasDelProveedor(facturasProveedor, proveedor);
                         List<Factura> facturasConFechas = facturasPorFecha(facturasProveedor);
 
+                        int cantidadRetencionesAdjuntar = facturasConFechas.Where(x => x.CuentaDelProveedor == proveedor).Sum(x => x.CantidadRetenciones);
+
                         foreach (string factura in facturas)
                         {
+                            int cantidadRetencionesProveedor = facturasConFechas.Find(x => x.CuentaDelProveedor == proveedor && x.NumeroDeFactura == factura).CantidadRetenciones;
+
                             if (!fechasFacturas.Contains(facturasConFechas.Find(x => x.NumeroDeFactura == factura).FechaRetencion))
                             {
                                 fechasFacturas.Add(facturasConFechas.Find(x => x.NumeroDeFactura == factura).FechaRetencion);
                             }
-
+                            
                             string nombreArchivo = proveedor + "-" + factura;
                             int anio = (facturasConFechas.Find(x => x.NumeroDeFactura == factura).FechaRetencion).Year;
                             string nombreMes = mes.nombreMes((facturasConFechas.Find(x => x.NumeroDeFactura == factura).FechaRetencion).Month);
@@ -135,13 +137,10 @@ namespace FinanzasAPI.Features.Repositories
                                 archivos.Add(archivo);
                             }
                         }
-                        int cantidadFacturasProveedor = facturasConFechas.FindAll(x => x.CuentaDelProveedor == proveedor).Count();
-                        int cantidadRetencionesAdjuntar = cantidadRetencionesProveedor * cantidadFacturasProveedor;
 
                         if (archivos.Count < cantidadRetencionesAdjuntar)
                         {
                             correosDeArchivosNoEncontrados.Add(facturaProveedor.CuentaDelProveedor);
-
 
                             envio.NumeroFactura = string.Join(", ", facturas);
                             envio.CuentaProveedor = facturaProveedor.CuentaDelProveedor;
@@ -192,10 +191,10 @@ namespace FinanzasAPI.Features.Repositories
                     response += "No se encontrarón las retenciones de los proveedores: " + string.Join(", ", correosDeArchivosNoEncontrados);
                 }
 
-                foreach (var factura in facturasProveedor)
+                foreach(var factura in facturasProveedor)
                 {
                     bool enviado = true;
-                    if (proveedoresSinCorreo.Exists(x => x == factura.CuentaDelProveedor) || correosNoEnviados.Exists(x => x == factura.CuentaDelProveedor) || correosDeArchivosNoEncontrados.Exists(x => x == factura.CuentaDelProveedor))
+                    if(proveedoresSinCorreo.Exists(x => x == factura.CuentaDelProveedor) || correosNoEnviados.Exists(x => x == factura.CuentaDelProveedor) || correosDeArchivosNoEncontrados.Exists(x => x == factura.CuentaDelProveedor))
                     {
                         enviado = false;
                     }
@@ -207,7 +206,7 @@ namespace FinanzasAPI.Features.Repositories
                     }
                 }
 
-                if (envios_Error.Count > 0 || envios_CorreoPendiente.Count > 0 || envios_RetencionesPendientes.Count > 0)
+                if(envios_Error.Count > 0 || envios_CorreoPendiente.Count > 0 || envios_RetencionesPendientes.Count > 0)
                 {
                     foreach (string correo in correosCopia)
                     {
@@ -242,7 +241,7 @@ namespace FinanzasAPI.Features.Repositories
             string textBody = "<p>Buen dia,</p>" +
                               $"<p>Se adjuntan retenciones para las facturas: {string.Join(", ", facturas)} correspondientes a la fecha {fechaWithFormat}. Favor confirmar de recibido al siguiente correo: {string.Join(", ", correosRecibido)}</p>";
 
-            response = enviarCorreo(correo, asunto, textBody, archivos, null, copiasCorreo);
+            response = enviarCorreo(correo, asunto, textBody, archivos, null, copiasCorreo).Result;
 
             return response;
         }
@@ -312,12 +311,12 @@ namespace FinanzasAPI.Features.Repositories
                 textBody += tablaHtml;
             }
 
-            response = enviarCorreo(correo, asunto, textBody, null, null, null);
+            response = enviarCorreo(correo, asunto, textBody, null, null, null).Result;
 
             return response;
         }
 
-        public string enviarCorreo(string correoDestino, string asunto, string textBody, List<Archivos> archivos = null, byte[] imagen = null, List<string> copiasCorreo = null)
+        public async Task<string> enviarCorreo(string correoDestino, string asunto, string textBody, List<Archivos> archivos = null, byte[] imagen = null, List<string> copiasCorreo = null)
         {
             string response = "";
             string htmlMessage = "<html><body>";
@@ -326,8 +325,26 @@ namespace FinanzasAPI.Features.Repositories
 
             try
             {
-                string emailOrigen =VariablesGlobales.Correo;
-                string contrasena = VariablesGlobales.Correo_Password;
+                string emailOrigen = ""; // "sistema@intermoda.com.hn";
+                string contrasena = ""; // "&odRad!=PlW7Iga";
+
+                using (SqlConnection sql = new SqlConnection(_connectionStringFinanzas))
+                {
+                    using (SqlCommand cmd = new SqlCommand("GetEmailAccount", sql))
+                    {
+                        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                        await sql.OpenAsync();
+
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                emailOrigen = reader["EmailAddress"].ToString();
+                                contrasena = reader["Password"].ToString();
+                            }
+                        }
+                    }
+                }
 
                 MailMessage OMailMesage = new MailMessage(emailOrigen, correoDestino, asunto, textBody);
                 OMailMesage.IsBodyHtml = true;
@@ -404,6 +421,34 @@ namespace FinanzasAPI.Features.Repositories
             facturas = facturas.Distinct().ToList();
 
             return facturas;
+
+            /*
+                         List<Factura> facturas = new();
+            List<string> retenDeFacturas = facturasProveedor.FindAll(x => x.CuentaDelProveedor == cuentaProveedor).Select(x => x.NumeroDeFactura).ToList();
+            string ultimaFactura = "";
+
+            foreach (FacturasProveedor facturaProv in facturasProveedor.Where(x => x.CuentaDelProveedor == cuentaProveedor))
+            {
+                string numFactura = removeTextFromHyphen(facturaProv.NumeroDeFactura);
+
+                if (ultimaFactura != numFactura)
+                {
+                    ultimaFactura = numFactura;
+
+                    Factura factura = new()
+                    {
+                        CuentaDelProveedor = cuentaProveedor,
+                        NumeroDeFactura = numFactura,
+                        CantidadRetenciones = facturaProv.CantidadRetenciones,
+                        FechaRetencion = facturaProv.FechaRetencion
+                    };
+
+                    facturas.Add(factura);
+                }
+            }
+
+            return facturas;
+             */
         }
 
         public List<Factura> facturasPorFecha(List<FacturasProveedor> facturasProveedor)
@@ -445,12 +490,12 @@ namespace FinanzasAPI.Features.Repositories
             return modifiedString;
         }
 
-        public async Task<int> GuardarHistorico(string cuenta, string email, string numFactura, string lote, string dataAreaId, bool estado, DateTime fechaRetencion)
+        public async Task<int> GuardarHistorico(string cuenta, string email, string numFactura, string lote,string dataAreaId, bool estado, DateTime fechaRetencion)
         {
             int response = 0;
             try
             {
-                using (SqlConnection sql = new SqlConnection(_connectionStringCubo))
+                using (SqlConnection sql = new SqlConnection(_connectionStringFinanzas))
                 {
                     using (SqlCommand cmd = new SqlCommand("[Retenciones].Insert_LogRetencionesEnviadas", sql))
                     {
@@ -475,7 +520,7 @@ namespace FinanzasAPI.Features.Repositories
                     }
                 }
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 Console.WriteLine(e.ToString());
             }
@@ -517,7 +562,7 @@ namespace FinanzasAPI.Features.Repositories
         {
             public string NombreProveedor { get; set; }
             public string CuentaProveedor { get; set; }
-            public string NumeroFactura { get; set; }
+            public string NumeroFactura { get;set; }    
             public string? RetencionPendiente { get; set; }
         }
 
