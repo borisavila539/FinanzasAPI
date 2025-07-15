@@ -33,5 +33,11 @@ namespace Core.DTOs
         public string footer01 { get; set; }
         public string footer02 { get; set; }
         public string footer03 { get; set; }
+
+        /*Commented by spineda on july/11/2025 - Begin*/
+        public decimal exchRate { get; set; }
+        public string currencyTxt { get;set; }
+        public string currencyCode { get; set; }
+        /*Commented by spineda on july/11/2025 - End*/
     }
 }

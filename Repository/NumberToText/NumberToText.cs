@@ -9,7 +9,10 @@ namespace Infraestructure.NumberToText
     public class NumberToText
     {
 
-        public string EnLetras(string num)
+        public string EnLetras(string num,
+                               /*Commented by spineda on july/11/2025 - Begin*/
+                               string currencyTxt)
+                               /*Commented by spineda on july/11/2025 - End*/
         {
             string res, dec = "";
             Int64 entero;
@@ -30,7 +33,9 @@ namespace Infraestructure.NumberToText
                 res = ToText(Convert.ToDouble(entero)) + dec;
                 string texto = res.ToLower();
 
-                return texto + " LEMPIRAS";
+                /*Commented by spineda on july/11/2025 - Begin*/
+                return $"{texto} {currencyTxt.ToUpper()}";
+                /*Commented by spineda on july/11/2025 - End*/
             }
             catch (Exception ex)
             {
