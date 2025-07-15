@@ -51,7 +51,14 @@ namespace FinanzasAPI.Controllers
         [HttpGet("medidas/{Tipo}")]
         public async Task<ActionResult<IEnumerable<MedidasDTOs>>> GetMedidas(int Tipo)
         {
-            var resp = await _pantsQuality.GetMedidas(Tipo);
+            var resp = await _pantsQuality.GetMedidas(Tipo,false);
+            return Ok(resp);
+        }
+
+        [HttpGet("medidas/{Tipo}/{OP}")]
+        public async Task<ActionResult<IEnumerable<MedidasDTOs>>> GetMedidas(int Tipo,bool OP)
+        {
+            var resp = await _pantsQuality.GetMedidas(Tipo,OP);
             return Ok(resp);
         }
 
