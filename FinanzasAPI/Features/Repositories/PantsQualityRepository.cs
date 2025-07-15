@@ -217,7 +217,7 @@ namespace FinanzasAPI.Features.Repositories
             };
         }
 
-        public async Task<List<MedidasDTOs>> GetMedidas(int Tipo)
+        public async Task<List<MedidasDTOs>> GetMedidas(int Tipo,bool OP)
         {
             using (SqlConnection sql = new SqlConnection(_connectionStringCubo))
             {
@@ -225,6 +225,8 @@ namespace FinanzasAPI.Features.Repositories
                 {
                     cmd.CommandType = System.Data.CommandType.StoredProcedure;
                     cmd.Parameters.Add(new SqlParameter("@Tipo", Tipo));
+                    cmd.Parameters.Add(new SqlParameter("@OP", OP));
+
 
                     var response = new List<MedidasDTOs>();
                     await sql.OpenAsync();
@@ -584,8 +586,11 @@ namespace FinanzasAPI.Features.Repositories
                     //la primera hoja lleva antes y desues de lavado por eso no se hace los mismo para las demas hojas
                     if (tipo.Hoja == 0)
                     {
-                        int tolerancia = 1;
-                        var medidas = await GetMedidas(tipo.ID);
+                        int tolerancia = 1;                       
+                        
+                        var medidas = await GetMedidas(tipo.ID, prodmasterid.StartsWith("OP-"));
+                        
+                        
 
                         try
                         {
@@ -787,7 +792,7 @@ namespace FinanzasAPI.Features.Repositories
                     else
                     {
                         int tolerancia = 1;
-                        var medidas = await GetMedidas(tipo.ID);
+                        var medidas = await GetMedidas(tipo.ID, prodmasterid.StartsWith("OP-"));
 
                         try
                         {

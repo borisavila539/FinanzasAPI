@@ -13,7 +13,7 @@ namespace Core.Interfaces
         public Task<List<ItemTallasDTOS>> GetItemTallas(string itemid, string prodmasterrefid);
         public Task<List<usuariosDTOs>> GetUsuarios(string user, string pass);
         public Task<List<MaestroOrdenes>> GetPostedMaestroOrdenes(int id, int userid, int estado);
-        public Task<List<MedidasDTOs>> GetMedidas(int Tipo);
+        public Task<List<MedidasDTOs>> GetMedidas(int Tipo,bool OP);
         public Task<List<MedidasInsertDTOs>> postMedidasCalidad( List<MedidasInsertDTOs> datos);
         public Task<List<DatosMedidasDtos>> getDatosMedidas(string prodmasterid, string talla, int lavado,int TipoMedida);
         public Task<List<ComentarioDTO>> postComentario(List<ComentarioDTO> comentario);
