@@ -1244,7 +1244,7 @@
                 <Paragraph>
                   <TextRuns>
                     <TextRun>
-                      <Value>="y de acuerdo al Decreto No DEI-217-2010 del IMPUESTO SOBRE LA RENTA (ISR), Hace constar: que se retuvo " + First(Fields!middle03.Value, "ComprobanteRetencion") + "%"</Value>
+                      <Value>="y de acuerdo al Decreto "+ Parameters!Decreto.Value +", Hace constar: que se retuvo " + First(Fields!middle03.Value, "ComprobanteRetencion") + "%"</Value>
                       <Style />
                     </TextRun>
                   </TextRuns>
@@ -1716,6 +1716,10 @@
       <DataType>String</DataType>
       <Prompt>ReportParameter1</Prompt>
     </ReportParameter>
+    <ReportParameter Name="Decreto">
+      <DataType>String</DataType>
+      <Prompt>ReportParameter1</Prompt>
+    </ReportParameter>
   </ReportParameters>
   <ReportParametersLayout>
     <GridLayoutDefinition>
@@ -1731,6 +1735,11 @@
           <ColumnIndex>1</ColumnIndex>
           <RowIndex>0</RowIndex>
           <ParameterName>NumberToText</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>2</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>Decreto</ParameterName>
         </CellDefinition>
       </CellDefinitions>
     </GridLayoutDefinition>

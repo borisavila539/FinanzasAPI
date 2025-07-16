@@ -409,7 +409,6 @@ namespace FinanzasAPI.Features.Repositories
                                 };
 
                                 files.Add(file);
-
                                 //MemoryStream ms = new MemoryStream(generar.GenerateReport_ComprobanteRetencionProveedor(comp));
                                 //mailMessage.Attachments.Add(new Attachment(ms, "Comprobante_Retencion " + comp.First().header02 + " .pdf"));
                                 /*Commented by spineda on july/14/2025 - End*/
