@@ -452,14 +452,14 @@
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox20">
+                        <Textbox Name="header02">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=(Fields!retencionISR.Value/Fields!importe.Value)*100</Value>
+                                  <Value>=Fields!header02.Value</Value>
                                   <Style>
                                     <FontSize>8pt</FontSize>
                                     <Format>#,0.00;(#,0.00)</Format>
@@ -469,7 +469,7 @@
                               <Style />
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox20</rd:DefaultName>
+                          <rd:DefaultName>header02</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -723,7 +723,7 @@
       <Width>20.43136cm</Width>
       <Page>
         <PageHeader>
-          <Height>13.58184cm</Height>
+          <Height>14.05809cm</Height>
           <PrintOnFirstPage>true</PrintOnFirstPage>
           <PrintOnLastPage>true</PrintOnLastPage>
           <ReportItems>
@@ -1244,7 +1244,7 @@
                 <Paragraph>
                   <TextRuns>
                     <TextRun>
-                      <Value>="y de acuerdo al Decreto No DEI-217-2010 del IMPUESTO SOBRE LA RENTA (ISR), Hace constar: que se retuvo " + First(Fields!middle03.Value, "ComprobanteRetencion") + "%"</Value>
+                      <Value>="y de acuerdo al Decreto "+ Parameters!Decreto.Value +", Hace constar: que se retuvo " + First(Fields!middle03.Value, "ComprobanteRetencion") + "%"</Value>
                       <Style />
                     </TextRun>
                   </TextRuns>
@@ -1471,9 +1471,9 @@
                 </Paragraph>
               </Paragraphs>
               <rd:DefaultName>Textbox31</rd:DefaultName>
-              <Top>11.59959cm</Top>
+              <Top>11.88181cm</Top>
               <Left>0.81703cm</Left>
-              <Height>0.6cm</Height>
+              <Height>1.37611cm</Height>
               <Width>14.676cm</Width>
               <ZIndex>23</ZIndex>
               <Style>
@@ -1493,7 +1493,7 @@
                 <Paragraph>
                   <TextRuns>
                     <TextRun>
-                      <Value>=Parameters!ValorRetenido.Value + " HNL"</Value>
+                      <Value>=Parameters!ValorRetenido.Value</Value>
                       <Style />
                     </TextRun>
                   </TextRuns>
@@ -1533,7 +1533,7 @@
               <rd:DefaultName>NumberToText</rd:DefaultName>
               <Top>10.96431cm</Top>
               <Left>5.49303cm</Left>
-              <Height>0.6cm</Height>
+              <Height>0.84695cm</Height>
               <Width>10cm</Width>
               <ZIndex>25</ZIndex>
               <Style>
@@ -1716,6 +1716,10 @@
       <DataType>String</DataType>
       <Prompt>ReportParameter1</Prompt>
     </ReportParameter>
+    <ReportParameter Name="Decreto">
+      <DataType>String</DataType>
+      <Prompt>ReportParameter1</Prompt>
+    </ReportParameter>
   </ReportParameters>
   <ReportParametersLayout>
     <GridLayoutDefinition>
@@ -1731,6 +1735,11 @@
           <ColumnIndex>1</ColumnIndex>
           <RowIndex>0</RowIndex>
           <ParameterName>NumberToText</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>2</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>Decreto</ParameterName>
         </CellDefinition>
       </CellDefinitions>
     </GridLayoutDefinition>

@@ -5,6 +5,7 @@ using ReportingServices.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 
@@ -44,6 +45,12 @@ namespace FinanzasAPI.Reporting
             decimal sumaRetension = 0;
             decimal total = 0;
 
+            /*Commented by spineda on july/11/2025 - Begin*/
+            string currencyCode = datos.Select(x => x.currencyCode).First();
+            string currencyTxt = datos.Select(x => x.currencyTxt).First();
+            decimal valueConvertedToHNL = 0;
+            /*Commented by spineda on july/11/2025 - End*/
+
             foreach (var item in datos)
             {
                 comprobante.header02 = item.header02;
@@ -81,12 +88,31 @@ namespace FinanzasAPI.Reporting
             sumaRetension -= total;
             Dictionary<string, string> parameters = new Dictionary<string, string>();
             NumberToText  numberToText = new NumberToText();
-            string texto = numberToText.EnLetras(Convert.ToString(sumaRetension));
+
+            /*Commented by spineda on july/11/2025 - Begin*/
+            string texto = "";
+
+            if (currencyCode != "HNL")
+            {
+                texto = numberToText.EnLetras(Convert.ToString(sumaRetension), currencyTxt);
+
+                decimal exchangeRate = datos.Select(x => x.exchRate).First();
+                valueConvertedToHNL = sumaRetension * exchangeRate;
+            }
+
+            string decreto = comprobantes.Select(x => x.header02).First() == "15.00" ? "No DEI-215-2010 del IMPUESTO SOBRE VENTA (ISV)" : "No DEI-217-2010 del IMPUESTO SOBRE LA RENTA (ISR)";
+            texto = texto== "" ? numberToText.EnLetras(Convert.ToString(sumaRetension), currencyTxt) : $"{texto}\n {numberToText.EnLetras(Convert.ToString(valueConvertedToHNL), "Lempiras")}";
+            /*Commented by spineda on july/11/2025 - End*/
 
             texto = char.ToUpper(texto[0] ) + texto.Substring(1);
 
-            parameters.Add("ValorRetenido", sumaRetension.ToString("0,0.00", CultureInfo.InvariantCulture));
+            parameters.Add("ValorRetenido", sumaRetension.ToString("0,0.00", CultureInfo.InvariantCulture) + $" {currencyCode}");
             parameters.Add("NumberToText", texto );
+
+            /*Commented by spineda on july/16/2025 - Begin*/
+            parameters.Add("Decreto", decreto);
+            /*Commented by spineda on july/16/2025 - End*/
+
             var ret = new LocalReport(rdlcFilesPath);
             report.AddDataSource("ComprobanteRetencion", comprobantes);
             try{
