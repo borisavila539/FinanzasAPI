@@ -45,7 +45,10 @@ namespace FinanzasAPI
             services.AddTransient<IFacturasProveedorRepository, FacturasProveedorRepository>();
             services.AddTransient<IEnvioCorreoRepository, EnvioCorreoRepository>();
             services.AddTransient<IConciliacionBancaria, ConciliacionBancariaRepository>();
-            
+            services.AddTransient<IDescargaDocumentosSL, DescargaDocumentosSLRepository>();
+
+
+
 
             services.AddSwaggerGen(c =>
             {
