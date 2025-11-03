@@ -117,6 +117,13 @@ namespace FinanzasAPI.Controllers
             return resp;
         }
 
+        [HttpGet("GetAditelaConfiguracionPorcentajeAceptacion")]
+
+        public async Task<ActionResult<IM_Auditela_Configuracioens>> GetAditelaConfiguracionPorcentajeAceptacion()
+        {
+            var resp = await _audiTelasRepository.GetConfiguracionPorcentajeAceptacion(); 
+            return resp;
+        }
 
     }
 }

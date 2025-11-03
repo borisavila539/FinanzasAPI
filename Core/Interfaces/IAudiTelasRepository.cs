@@ -21,5 +21,7 @@ namespace Core.Interfaces
         public Task<IM_ObtenerDatosRollo> Get_ObtenerDatosRollo(string Rollo);
         public Task<string> GetimprimirEtiquetaRollo(string Rollo);
 
+        public Task<IM_Auditela_Configuracioens> GetConfiguracionPorcentajeAceptacion(); 
+
     }
 }
