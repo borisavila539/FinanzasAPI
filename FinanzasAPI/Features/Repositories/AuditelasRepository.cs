@@ -19,7 +19,7 @@ namespace FinanzasAPI.Features.Repositories
 
         public AuditelasRepository()
         {
-            
+
         }
         public AuditelasRepository(AxContext context, IConfiguration configuracion)
         {
@@ -456,7 +456,7 @@ namespace FinanzasAPI.Features.Repositories
             };
         }
 
-        public async  Task<List<RollosImporteLoteDTO>> getRollosImporteLote(string Importacion, string Lote,string tela)
+        public async Task<List<RollosImporteLoteDTO>> getRollosImporteLote(string Importacion, string Lote, string tela)
         {
             var response = new List<RollosImporteLoteDTO>();
             using (SqlConnection sql = new SqlConnection(_connectionString))
@@ -501,7 +501,8 @@ namespace FinanzasAPI.Features.Repositories
             int cont = 0;
             try
             {
-                datos.ForEach(async (x) => {
+                datos.ForEach(async (x) =>
+                {
                     using (SqlConnection sql1 = new SqlConnection(_connectionString))
                     {
                         using (SqlCommand cmd1 = new SqlCommand("[IM_InsertPruebaCalidadTela]", sql1))
@@ -543,9 +544,9 @@ namespace FinanzasAPI.Features.Repositories
             catch (Exception err)
             {
                 return null;
-            }         
-            
-            
+            }
+
+
         }
 
         public async Task<IM_ObtenerDatosRollo> Get_ObtenerDatosRollo(string Rollo)
@@ -602,7 +603,7 @@ namespace FinanzasAPI.Features.Repositories
                     {
                         while (await reader.ReadAsync())
                         {
-                           data = GetimprimirEtiquetaRolloLines(reader);
+                            data = GetimprimirEtiquetaRolloLines(reader);
                         }
                     }
                 }
@@ -613,7 +614,7 @@ namespace FinanzasAPI.Features.Repositories
             etiqueta += $"^FO200,50^BC^FD{data.INVENTSERIALID}^FS";
             etiqueta += $"^FO50,190^FDProveedor: {data.Proveedor}^FS";
             etiqueta += $"^FO50,220^FDNo. Rollo Proveedor: {data.APVENDROLL}^FS";
-            etiqueta += $"^FO500,220^FDCantidad: {Math.Round(data.AVAILPHYSICAL,2)} {(data.ITEMID.Substring(0, 2) == "45" ? "lb" : "yd")}^FS";
+            etiqueta += $"^FO500,220^FDCantidad: {Math.Round(data.AVAILPHYSICAL, 2)} {(data.ITEMID.Substring(0, 2) == "45" ? "lb" : "yd")}^FS";
             etiqueta += $"^FO50,250^FDTela: {data.ITEMID}^FS";
             etiqueta += $"^FO500,250^FDColor: {data.COLOR}^FS";
             etiqueta += $"^FO50,280^FDLote: {data.INVENTBATCHID}^FS";
@@ -621,7 +622,7 @@ namespace FinanzasAPI.Features.Repositories
             etiqueta += $"^FO50,310^FDAuditor: {data.Auditor}^FS";
             etiqueta += $"^FO500,310^FDFecha: {DateTime.Now.ToString("dd/MM/yyyy")}^FS";
             etiqueta += $"^FO50,340^FDPPM2: {Math.Round(data.APPMts, 2)}^FS";
-            etiqueta+= $"^FO50,370^FDComentario: {data.Comentario}^FS^PQ2^XZ";
+            etiqueta += $"^FO50,370^FDComentario: {data.Comentario}^FS^PQ2^XZ";
 
             try
             {
@@ -660,7 +661,43 @@ namespace FinanzasAPI.Features.Repositories
 
             };
         }
-    }
 
+        public async Task<IM_Auditela_Configuracioens> GetConfiguracionPorcentajeAceptacion()
+        {
+            IM_Auditela_Configuracioens response = new IM_Auditela_Configuracioens();
+            using (SqlConnection con = new SqlConnection(_connectionStringCubo))
+            {
+                using (SqlCommand cmd = new SqlCommand("[IM_WMS_Auditela_GetConfiguraciones]", con))
+                {
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+
+                    await con.OpenAsync();
+
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            response = GetAditelaConfiguracion(reader);
+                        }
+                    }
+
+                }
+            }
+            return response;
+        }
+
+        public IM_Auditela_Configuracioens GetAditelaConfiguracion(SqlDataReader reader)
+        {
+            return new IM_Auditela_Configuracioens()
+            {
+                Valor = reader["Valor"].ToString(),
+                Varible = reader["Variable"].ToString(),
+                Fecha = Convert.ToDateTime(reader["Fecha"])
+            };
+        }
+    }
 }
+
+
 
