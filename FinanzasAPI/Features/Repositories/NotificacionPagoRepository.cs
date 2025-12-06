@@ -453,7 +453,7 @@ namespace FinanzasAPI.Features.Repositories
 
                     data.ForEach(x =>
                     {
-                        // sendHisttory(empresa, data[0].proveedorNum, data[0].correo, numerolote, x.NumeroFactura, x.fecha, true);
+                        sendHisttory(empresa, data[0].proveedorNum, data[0].correo, numerolote, x.NumeroFactura, x.fecha, true);
 
                     });
                 }
@@ -467,6 +467,7 @@ namespace FinanzasAPI.Features.Repositories
 
                         });
                     }
+                   
                 }
             };
 
