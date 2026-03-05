@@ -13,6 +13,7 @@ using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.IO;
 using IM_Auditelas_WS;
+using IM_RegistroBoletin_WS;
 
 namespace FinanzasAPI.Features.Repositories
 {
@@ -34,11 +35,11 @@ namespace FinanzasAPI.Features.Repositories
             List<DEFECTOSLINE> LIST = new List<DEFECTOSLINE>();
             List<ObtenerDatosDefectosDTO> detalle = GetDatosDefectos(id);
             List<ObtenerDetalleRolloDTO> encabezado = getObtenerDetalleRollo(id);
-            var largo = await getDatosRollo( encabezado[0].Id_Pieza, encabezado[0].Numero_Rollo_Proveedor);
+            var largo = await getDatosRollo(encabezado[0].Id_Pieza, encabezado[0].Numero_Rollo_Proveedor);
 
 
 
-           
+
             detalle.ForEach(x =>
             {
                 DEFECTOSLINE line = new DEFECTOSLINE();
@@ -50,33 +51,34 @@ namespace FinanzasAPI.Features.Repositories
                 line.LEVEL3 = x.Nivel_3.ToString();
                 line.LEVEL4 = x.Nivel_4.ToString();
                 line.OBSERVACION = encabezado[0].Observaciones;
-                line.YARDASREALES = (largo[0].Yardas_Reales*Convert.ToDecimal(1.09361)).ToString();
+                line.YARDASREALES = (largo[0].Yardas_Reales * Convert.ToDecimal(1.09361)).ToString();
                 LIST.Add(line);
 
             });
 
             HEADER.LINES = LIST.ToArray();
             string defectosLines = SerializationService.Serialize(HEADER);
-            CallContext context = new CallContext { Company = "IMHN" };
-            var serviceClient = new M_AudiTelasClient(GetBinding(),GetEndpointAddr());
+            IM_Auditelas_WS.CallContext context = new IM_Auditelas_WS.CallContext { Company = "IMHN" };
+            var serviceClient = new M_AudiTelasClient(GetBinding(), GetEndpointAddr());
 
             serviceClient.ClientCredentials.Windows.ClientCredential.UserName = "servicio_ax";
             serviceClient.ClientCredentials.Windows.ClientCredential.Password = "Int3r-M0d@.aX$3Rv";
-            
-            try {
+
+            try
+            {
                 string dataValidation = string.Format("<INTEGRATION><COMPANY><CODE>{0}</CODE><USER>{1}</USER></COMPANY></INTEGRATION>", context.Company, "servicio_ax");
-                var resp = serviceClient.initAsync(context,dataValidation, defectosLines);
-       
+                var resp = serviceClient.initAsync(context, dataValidation, defectosLines);
+
                 return resp.Result.response;
             }
             catch (Exception ex)
             {
                 return null;
-            }          
+            }
 
         }
 
-        public  List<ObtenerDatosDefectosDTO> GetDatosDefectos(int idRollo)
+        public List<ObtenerDatosDefectosDTO> GetDatosDefectos(int idRollo)
         {
             var response = new List<ObtenerDatosDefectosDTO>();
 
@@ -88,7 +90,7 @@ namespace FinanzasAPI.Features.Repositories
                     cmd.Parameters.Add(new SqlParameter("@idrollo", idRollo));
 
                     sql.Open();
-                    using (var reader =  cmd.ExecuteReader())
+                    using (var reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
                         {
@@ -111,7 +113,7 @@ namespace FinanzasAPI.Features.Repositories
                 Nivel_3 = Convert.ToInt32(reader["Nivel_3"].ToString()),
                 Nivel_4 = Convert.ToInt32(reader["Nivel_4"].ToString()),
                 Total_Defectos = Convert.ToInt32(reader["Total_Defectos"].ToString())
-                
+
             };
         }
         public List<ObtenerDetalleRolloDTO> getObtenerDetalleRollo(int Id)
@@ -210,6 +212,42 @@ namespace FinanzasAPI.Features.Repositories
             };
         }
 
+
+
+        //Pago Boletin
+        public async Task<string> RegistroPagoBoletin(string JournalID)
+        {
+
+            IM_RegistroBoletin_WS.CallContext context = new IM_RegistroBoletin_WS.CallContext { Company = "IMHN" };
+            var serviceClient = new M_RegistroBoletinClient(GetBinding(), GetEndpointAddBoletin());
+
+            serviceClient.ClientCredentials.Windows.ClientCredential.UserName = "servicio_ax";
+            serviceClient.ClientCredentials.Windows.ClientCredential.Password = "Int3r-M0d@.aX$3Rv";
+
+            try
+            {
+                string dataValidation = string.Format("<INTEGRATION><COMPANY><CODE>{0}</CODE><USER>{1}</USER></COMPANY></INTEGRATION>", context.Company, "servicio_ax");
+                var resp =  serviceClient.initAsync(context, dataValidation, JournalID);
+
+                return resp.Result.response;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+
+        }
+        private EndpointAddress GetEndpointAddBoletin()
+        {
+            string url = "net.tcp://gim-dev-AOS:8201/DynamicsAx/Services/IM_RegistroBoletinGP";
+            string user = "sqladmin@intermoda.com.hn";
+
+            var uri = new Uri(url);
+            var epid = new UpnEndpointIdentity(user);
+            var addrHdrs = new AddressHeader[0];
+            var endpointAddr = new EndpointAddress(uri, addrHdrs); //, epid, addrHdrs);
+            return endpointAddr;
+        }
     }
     public static class SerializationService
     {

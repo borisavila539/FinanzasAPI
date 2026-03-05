@@ -9,5 +9,7 @@ namespace Core.Interfaces
     public interface IAX
     {
         public Task<string> InsertDefectos(int id);
+        public Task<string> RegistroPagoBoletin(string JournalID);
+
     }
 }
