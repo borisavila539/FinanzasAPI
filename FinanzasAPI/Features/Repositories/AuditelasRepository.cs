@@ -25,7 +25,7 @@ namespace FinanzasAPI.Features.Repositories
         {
             _context = context;
             _connectionString = configuracion.GetConnectionString("MicrosoftDynamicsAX_PRO");
-            _connectionStringCubo = configuracion.GetConnectionString("IMFinanzas");
+            _connectionStringCubo = configuracion.GetConnectionString("IMFinanzasDev");
         }
         public async Task<List<ObtenerRollosAuditarDTO>> GetRollosAuditar(string RollID, string ApVendRoll, string importacion, string tela, int page, int size)
         {
@@ -624,7 +624,7 @@ namespace FinanzasAPI.Features.Repositories
             etiqueta += $"^FO50,340^FDPPM2: {Math.Round(data.APPMts, 2)}^FS";
             etiqueta += $"^FO50,370^FDComentario: {data.Comentario}^FS^PQ2^XZ";
 
-            try
+           /* try
             {
                 using (TcpClient client = new TcpClient("10.1.1.176", 9100))//176
                 {
@@ -639,7 +639,7 @@ namespace FinanzasAPI.Features.Repositories
             catch (Exception err)
             {
                 return err.ToString();
-            }
+            }*/
             return "OK";
         }
         public IM_Auditela_Etiqueta_Rollo GetimprimirEtiquetaRolloLines(SqlDataReader reader)

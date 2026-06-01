@@ -25,7 +25,7 @@ namespace FinanzasAPI.Features.Repositories
         public AXRepository(AxContext context, IConfiguration configuracion)
         {
             _context = context;
-            _connectionStringCubo = configuracion.GetConnectionString("IMFinanzas");
+            _connectionStringCubo = configuracion.GetConnectionString("IMFinanzasDev");
         }
 
         public async Task<string> InsertDefectos(int id)
@@ -162,7 +162,7 @@ namespace FinanzasAPI.Features.Repositories
 
         private EndpointAddress GetEndpointAddr()
         {
-            string url = "net.tcp://gim-pro3-AOS:8201/DynamicsAx/Services/IM_AudiTelasGP";
+            string url = "net.tcp://gim-dev-AOS:8201/DynamicsAx/Services/IM_AudiTelasGP";
             string user = "sqladmin@intermoda.com.hn";
 
             var uri = new Uri(url);
@@ -233,7 +233,7 @@ namespace FinanzasAPI.Features.Repositories
             }
             catch (Exception ex)
             {
-                return null;
+                return ex.ToString();
             }
 
         }

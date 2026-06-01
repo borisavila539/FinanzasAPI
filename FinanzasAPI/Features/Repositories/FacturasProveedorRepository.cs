@@ -1,5 +1,4 @@
 ﻿using Core.Interfaces;
-using Infraestructure.Data;
 using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -13,8 +12,8 @@ using System.Net.Mail;
 using System.Net;
 using Core.Utilities;
 using System.Net.Mime;
-using System.Net.Http;
 using System.Globalization;
+using System.Data;
 
 namespace FinanzasAPI.Features.Repositories
 {
@@ -62,11 +61,14 @@ namespace FinanzasAPI.Features.Repositories
                         cmd.CommandType = System.Data.CommandType.StoredProcedure;
                         cmd.Parameters.Add(new SqlParameter("@DATAAREAID", dataAreaId));
                         cmd.Parameters.Add(new SqlParameter("@FECHA", fecha));
-                        await sql.OpenAsync();
 
-                        using (var reader = await cmd.ExecuteReaderAsync())
+                        cmd.CommandTimeout = 460;
+
+                        await sql.OpenAsync().ConfigureAwait(false);
+
+                        using (var reader = await cmd.ExecuteReaderAsync(CommandBehavior.CloseConnection).ConfigureAwait(false))
                         {
-                            while (await reader.ReadAsync())
+                            while (await reader.ReadAsync().ConfigureAwait(false))
                             {
                                 facturasProveedor.Add(getFacturasProveedor(reader));
                             }
@@ -137,7 +139,7 @@ namespace FinanzasAPI.Features.Repositories
                                 archivos.Add(archivo);
                             }
                         }
-
+                        
                         if (archivos.Count < cantidadRetencionesAdjuntar)
                         {
                             correosDeArchivosNoEncontrados.Add(facturaProveedor.CuentaDelProveedor);

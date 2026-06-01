@@ -287,10 +287,11 @@ namespace FinanzasAPI.Features.Repositories
                     string correoOrigen = VariablesGlobales.Correo;
                     string contrasena = VariablesGlobales.Correo_Password;
                     string asunto = "Notificacion de pago";
-                    if (empresa == "IMGT")
-                    {
+                    /*if (empresa == "IMGT")
+                    {*/
                         correoDestino += (correoCopia.Length > 0 ? "," + correoCopia : "");
-                    }
+                    //}
+
 
                     //Cuerpo del correo
                     string html = $"<h3>Estimados señores de: {data[0].NombreProveedor}</h3>" +
